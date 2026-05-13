@@ -16,6 +16,7 @@ from ..services.intelligence.architecture_inference_engine import ArchitectureIn
 from ..services.intelligence.reasoning_inference_engine import ReasoningInferenceEngine
 from ..services.intelligence.viva_intelligence_engine import VivaIntelligenceEngine
 from ..services.intelligence.graph_confidence_engine import GraphConfidenceEngine
+from ..services.intelligence.implementation_flow_engine import ImplementationFlowEngine
 from ..services.llm import LLMService
 
 class OracleAgent(BaseAgent):
@@ -70,12 +71,12 @@ class OracleAgent(BaseAgent):
                 
                 file_summaries = FileSummarizer.summarize_structure(repo_structure)
                 
-                # --- NEW INTELLIGENCE PHASE ---
+                # Structural Intelligence
                 project_graph = ProjectRelationshipEngine.infer_relationships(repo_path, repo_detections, repo_structure)
                 project_graph = GraphConfidenceEngine.refine_scores(project_graph)
                 self.emit_event(session_id, EventType.PROJECT_GRAPH_BUILT, {"nodes": len(project_graph.nodes), "edges": len(project_graph.edges)})
 
-        # 4. Hybrid Synthesis (Intelligence Layer)
+        # 4. Intelligence Synthesis
         arch_inference = ArchitectureInferenceEngine.infer_architecture(project_graph, repo_detections)
         reasoning = ReasoningInferenceEngine.infer_reasoning(repo_detections)
         tradeoffs = ReasoningInferenceEngine.infer_tradeoffs(repo_detections)
@@ -83,9 +84,7 @@ class OracleAgent(BaseAgent):
         inconsistencies = VivaIntelligenceEngine.detect_inconsistencies(doc_text, repo_detections)
         complexity_mismatch = VivaIntelligenceEngine.detect_complexity_mismatch(arch_inference, repo_detections)
 
-        self.emit_event(session_id, EventType.CONTEXT_SYNTHESIZED, {"arch": arch_inference.value})
-
-        # Final Synthesis
+        # Final Synthesis Context
         context = StructuredContext(
             project_name=EvidenceModel(value="Project TWELVE", confidence=0.9, evidence=["Inferred from repo/docs"]),
             project_type=EvidenceModel(value="Intelligence System", confidence=0.8, evidence=["Technical analysis patterns"]),
@@ -101,7 +100,13 @@ class OracleAgent(BaseAgent):
             inconsistencies=inconsistencies,
             complexity_mismatch=complexity_mismatch
         )
-        
+
+        # 5. NEW: Implementation Intelligence Phase
+        if repo_url and repo_path:
+            self.log_info("Starting implementation flow analysis...")
+            context = ImplementationFlowEngine.analyze_implementation(repo_path, repo_structure, context)
+            self.emit_event(session_id, EventType.IMPLEMENTATION_FLOW_DETECTED, {"nodes": len(context.execution_graph.nodes)})
+
         self.emit_event(session_id, EventType.CONTEXT_READY, {"project_name": context.project_name.value})
         
         return context

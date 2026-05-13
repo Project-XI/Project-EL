@@ -1,15 +1,11 @@
 from typing import List, Dict, Any, Optional, Union
 from pydantic import BaseModel, Field
-
-class EvidenceModel(BaseModel):
-    value: Any
-    confidence: float
-    evidence: List[str] = []
+from enum import Enum
 
 class ProjectNode(BaseModel):
     id: str
     label: str
-    type: str # e.g., "frontend", "backend", "database", "middleware"
+    type: str
     metadata: Dict[str, Any] = {}
 
 class ProjectEdge(BaseModel):
@@ -29,17 +25,68 @@ class ImplementationReasoning(BaseModel):
     confidence: float
     evidence: List[str]
 
+class InconsistencyFlag(BaseModel):
+    issue: str
+    severity: str
+    confidence: float
+    evidence: List[str]
+
+class EvidenceModel(BaseModel):
+    value: Any
+    confidence: float
+    evidence: List[str] = []
+
+class FlowNodeType(str, Enum):
+    ROUTE = "ROUTE"
+    API_CALL = "API_CALL"
+    MIDDLEWARE = "MIDDLEWARE"
+    AUTH_HANDLER = "AUTH_HANDLER"
+    DB_QUERY = "DB_QUERY"
+    SERVICE_LAYER = "SERVICE_LAYER"
+    STATE_STORE = "STATE_STORE"
+    MODEL_INFERENCE = "MODEL_INFERENCE"
+    EXCEPTION_HANDLER = "EXCEPTION_HANDLER"
+
+class FlowNode(BaseModel):
+    id: str
+    label: str
+    type: FlowNodeType
+    metadata: Dict[str, Any] = {}
+
+class FlowEdge(BaseModel):
+    source: str
+    target: str
+    relationship: str
+    confidence: float
+    evidence: List[str] = []
+
+class ExecutionGraph(BaseModel):
+    nodes: List[FlowNode] = []
+    edges: List[FlowEdge] = []
+    middleware: List[str] = []
+    db_calls: List[str] = []
+    auth_points: List[str] = []
+    risk_flags: List[str] = []
+    failure_paths: List[str] = []
+
+class ImplementationFlow(BaseModel):
+    steps: List[str]
+    confidence: float
+    flow_confidence: Dict[str, float]
+    evidence: List[str]
+
+class RuntimeRisk(BaseModel):
+    value: str
+    severity: str # "LOW", "MEDIUM", "HIGH", "CRITICAL"
+    confidence: float
+    evidence: List[str]
+
 class VivaTarget(BaseModel):
     topic: str
     question_target: str
     difficulty: str # "easy", "medium", "hard"
+    importance_score: float
     focus: str
-
-class InconsistencyFlag(BaseModel):
-    issue: str
-    severity: str # "low", "medium", "high"
-    confidence: float
-    evidence: List[str]
 
 class StructuredContext(BaseModel):
     project_name: EvidenceModel
@@ -50,24 +97,26 @@ class StructuredContext(BaseModel):
     authentication_system: EvidenceModel
     architecture_pattern: EvidenceModel
     
-    # Advanced Intelligence
-    project_graph: ProjectGraph = Field(default_factory=ProjectGraph)
+    # Implementation Intelligence
+    execution_graph: ExecutionGraph = Field(default_factory=ExecutionGraph)
+    implementation_flows: Dict[str, ImplementationFlow] = {}
+    authentication_flow: Optional[ImplementationFlow] = None
+    api_lifecycle: Optional[ImplementationFlow] = None
+    database_interaction_flow: Optional[ImplementationFlow] = None
+    middleware_chain: List[EvidenceModel] = []
+    security_flows: List[EvidenceModel] = []
+    failure_paths: List[EvidenceModel] = []
+    runtime_risks: List[RuntimeRisk] = []
+    
+    # Reasoning & Analysis
     implementation_reasoning: List[ImplementationReasoning] = []
     tradeoff_analysis: List[EvidenceModel] = []
     
     # Viva Intelligence
-    viva_intelligence_targets: List[VivaTarget] = []
-    failure_scenarios: List[str] = []
-    scalability_questions: List[str] = []
-    optimization_questions: List[str] = []
-    cross_question_targets: List[str] = []
+    implementation_viva_targets: List[VivaTarget] = []
+    viva_intelligence_targets: List[VivaTarget] = [] # Legacy support
     
-    # Detection Flags
+    # Meta
     inconsistencies: List[InconsistencyFlag] = []
     complexity_mismatch: Optional[EvidenceModel] = None
-    
-    # Metadata
     raw_summary: Optional[str] = None
-    
-    # Pydantic V2 compatibility is inherent in the class definition
-    # but we ensure all calls use .model_dump()
