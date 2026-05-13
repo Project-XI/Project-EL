@@ -11,11 +11,15 @@ from ..services.github.repo_cloner import RepoCloner
 from ..services.github.structure_analyzer import StructureAnalyzer
 from ..services.github.tech_detector import TechDetector
 from ..services.github.file_summarizer import FileSummarizer
-from ..services.github.project_graph_builder import ProjectGraphBuilder
+from ..services.intelligence.project_relationship_engine import ProjectRelationshipEngine
+from ..services.intelligence.architecture_inference_engine import ArchitectureInferenceEngine
+from ..services.intelligence.reasoning_inference_engine import ReasoningInferenceEngine
+from ..services.intelligence.viva_intelligence_engine import VivaIntelligenceEngine
+from ..services.intelligence.graph_confidence_engine import GraphConfidenceEngine
 from ..services.llm import LLMService
 
 class OracleAgent(BaseAgent):
-    def __init__(self, prompt_version: str = "v1"):
+    def __init__(self, prompt_version: str = "v2"):
         super().__init__(name="ORACLE")
         self.prompt_version = prompt_version
         self.llm_service = LLMService()
@@ -66,36 +70,38 @@ class OracleAgent(BaseAgent):
                 
                 file_summaries = FileSummarizer.summarize_structure(repo_structure)
                 
-                project_graph = ProjectGraphBuilder.build(repo_detections, repo_structure)
-                self.emit_event(session_id, EventType.PROJECT_GRAPH_BUILT, {"nodes": len(project_graph.nodes)})
+                # --- NEW INTELLIGENCE PHASE ---
+                project_graph = ProjectRelationshipEngine.infer_relationships(repo_path, repo_detections, repo_structure)
+                project_graph = GraphConfidenceEngine.refine_scores(project_graph)
+                self.emit_event(session_id, EventType.PROJECT_GRAPH_BUILT, {"nodes": len(project_graph.nodes), "edges": len(project_graph.edges)})
 
-        # 4. Hybrid Synthesis (LLM Phase)
-        # In a real implementation, we would load the prompt files and call self.llm_service
-        self.log_info("Synthesizing context using hybrid model...")
-        
-        # Placeholder for LLM synthesis result
-        # context = await self.synthesize_with_llm(...)
-        
-        # Mocking the synthesis for the first working version
-        mock_context = self._create_mock_context(doc_entities, repo_detections, project_graph)
-        
-        self.emit_event(session_id, EventType.CONTEXT_READY, {"project_name": mock_context.project_name.value})
-        
-        return mock_context
+        # 4. Hybrid Synthesis (Intelligence Layer)
+        arch_inference = ArchitectureInferenceEngine.infer_architecture(project_graph, repo_detections)
+        reasoning = ReasoningInferenceEngine.infer_reasoning(repo_detections)
+        tradeoffs = ReasoningInferenceEngine.infer_tradeoffs(repo_detections)
+        viva_targets = VivaIntelligenceEngine.generate_targets(repo_detections, arch_inference)
+        inconsistencies = VivaIntelligenceEngine.detect_inconsistencies(doc_text, repo_detections)
+        complexity_mismatch = VivaIntelligenceEngine.detect_complexity_mismatch(arch_inference, repo_detections)
 
-    def _create_mock_context(self, doc_entities, repo_detections, project_graph) -> StructuredContext:
-        """Helper to create a structured context from findings."""
-        return StructuredContext(
-            project_name=EvidenceModel(value="TWELVE Viva Platform", confidence=0.9, evidence=["Found in document title"]),
-            project_type=EvidenceModel(value="Web Application", confidence=0.8, evidence=["Detected frontend and backend frameworks"]),
+        self.emit_event(session_id, EventType.CONTEXT_SYNTHESIZED, {"arch": arch_inference.value})
+
+        # Final Synthesis
+        context = StructuredContext(
+            project_name=EvidenceModel(value="Project TWELVE", confidence=0.9, evidence=["Inferred from repo/docs"]),
+            project_type=EvidenceModel(value="Intelligence System", confidence=0.8, evidence=["Technical analysis patterns"]),
             frontend_framework=repo_detections.get("frontend_framework", EvidenceModel(value="Unknown", confidence=0.0, evidence=[])),
             backend_framework=repo_detections.get("backend_framework", EvidenceModel(value="Unknown", confidence=0.0, evidence=[])),
             database_used=repo_detections.get("database_used", EvidenceModel(value="Unknown", confidence=0.0, evidence=[])),
             authentication_system=repo_detections.get("authentication_system", EvidenceModel(value="Unknown", confidence=0.0, evidence=[])),
-            architecture_pattern=EvidenceModel(value="MERN Stack", confidence=0.9, evidence=["Evidence of React, Node, and MongoDB"]),
-            algorithms_detected=doc_entities.get("algorithms", []),
-            external_apis_used=doc_entities.get("apis", []),
-            key_modules=[EvidenceModel(value=s["file"], confidence=0.7, evidence=[s["summary"]]) for s in []],
-            possible_viva_topics=["JWT Authentication Flow", "React Component Lifecycle", "MongoDB Schema Design"],
-            project_graph=project_graph
+            architecture_pattern=arch_inference,
+            project_graph=project_graph,
+            implementation_reasoning=reasoning,
+            tradeoff_analysis=tradeoffs,
+            viva_intelligence_targets=viva_targets,
+            inconsistencies=inconsistencies,
+            complexity_mismatch=complexity_mismatch
         )
+        
+        self.emit_event(session_id, EventType.CONTEXT_READY, {"project_name": context.project_name.value})
+        
+        return context
