@@ -16,6 +16,7 @@ class VivaIntelligenceEngine:
                 topic="Architecture",
                 question_target="REST vs GraphQL",
                 difficulty="medium",
+                importance_score=0.8,
                 focus="Why REST was preferred over GraphQL for this project."
             ))
 
@@ -26,6 +27,7 @@ class VivaIntelligenceEngine:
                     topic="Backend",
                     question_target="Async performance",
                     difficulty="hard",
+                    importance_score=0.9,
                     focus="How FastAPI handles concurrent requests compared to Flask."
                 ))
             if "JWT" in str(model.value):
@@ -33,6 +35,7 @@ class VivaIntelligenceEngine:
                     topic="Security",
                     question_target="Token revocation",
                     difficulty="hard",
+                    importance_score=0.85,
                     focus="How the system handles token invalidation or logout."
                 ))
                 
