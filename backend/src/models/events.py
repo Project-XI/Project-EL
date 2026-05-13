@@ -13,6 +13,17 @@ class EventType(str, Enum):
     ANSWER_RECEIVED = "answer_received"
     BEHAVIOUR_FLAGGED = "behaviour_flagged"
     SYSTEM_ERROR = "system_error"
+    
+    # ORACLE Events
+    FILE_RECEIVED = "file_received"
+    PDF_PARSED = "pdf_parsed"
+    DOCX_PARSED = "docx_parsed"
+    REPO_CLONED = "repo_cloned"
+    STRUCTURE_ANALYZED = "structure_analyzed"
+    TECH_STACK_DETECTED = "tech_stack_detected"
+    PROJECT_GRAPH_BUILT = "project_graph_built"
+    CONTEXT_SYNTHESIZED = "context_synthesized"
+    CONTEXT_READY = "context_ready"
 
 class PlatformEvent(BaseModel):
     event_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
