@@ -15,11 +15,31 @@ class ProjectNode(BaseModel):
 class ProjectEdge(BaseModel):
     source: str
     target: str
-    label: Optional[str] = None
+    relationship: str
+    confidence: float
+    evidence: List[str] = []
 
 class ProjectGraph(BaseModel):
     nodes: List[ProjectNode] = []
     edges: List[ProjectEdge] = []
+
+class ImplementationReasoning(BaseModel):
+    technology: str
+    probable_reasoning: List[str]
+    confidence: float
+    evidence: List[str]
+
+class VivaTarget(BaseModel):
+    topic: str
+    question_target: str
+    difficulty: str # "easy", "medium", "hard"
+    focus: str
+
+class InconsistencyFlag(BaseModel):
+    issue: str
+    severity: str # "low", "medium", "high"
+    confidence: float
+    evidence: List[str]
 
 class StructuredContext(BaseModel):
     project_name: EvidenceModel
@@ -30,19 +50,24 @@ class StructuredContext(BaseModel):
     authentication_system: EvidenceModel
     architecture_pattern: EvidenceModel
     
-    # Lists of complex objects or simple strings with evidence
-    algorithms_detected: List[EvidenceModel] = []
-    external_apis_used: List[EvidenceModel] = []
-    key_modules: List[EvidenceModel] = []
-    core_features: List[EvidenceModel] = []
+    # Advanced Intelligence
+    project_graph: ProjectGraph = Field(default_factory=ProjectGraph)
+    implementation_reasoning: List[ImplementationReasoning] = []
+    tradeoff_analysis: List[EvidenceModel] = []
     
     # Viva Intelligence
-    possible_viva_topics: List[str] = []
+    viva_intelligence_targets: List[VivaTarget] = []
+    failure_scenarios: List[str] = []
+    scalability_questions: List[str] = []
+    optimization_questions: List[str] = []
     cross_question_targets: List[str] = []
-    possible_failure_points: List[str] = []
-    optimization_opportunities: List[str] = []
-    scalability_concerns: List[str] = []
-    security_concerns: List[str] = []
     
-    project_graph: ProjectGraph = Field(default_factory=ProjectGraph)
+    # Detection Flags
+    inconsistencies: List[InconsistencyFlag] = []
+    complexity_mismatch: Optional[EvidenceModel] = None
+    
+    # Metadata
     raw_summary: Optional[str] = None
+    
+    # Pydantic V2 compatibility is inherent in the class definition
+    # but we ensure all calls use .model_dump()
