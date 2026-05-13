@@ -1,0 +1,22 @@
+Raw Analysis Data:
+
+DOCUMENT TEXT (Snippet):
+{{ document_text_snippet }}
+
+TECH DETECTED (Rules-based):
+{{ tech_detections }}
+
+ALGORITHMS DETECTED (Rules-based):
+{{ algo_detections }}
+
+REPOSITORY STRUCTURE:
+{{ repo_structure_summary }}
+
+PROJECT GRAPH (Inferred):
+{{ project_graph }}
+
+FILE SUMMARIES:
+{{ file_summaries }}
+
+Based on the above data, synthesize the final StructuredContext. Ensure every field has value, confidence, and evidence.
+For viva intelligence fields (possible_viva_topics, etc.), provide actionable technical insights.
