@@ -21,13 +21,25 @@ class FastAPIAdapter(BaseAdapter):
                                 for decorator in node.decorator_list:
                                     # Detect @app.get, @router.post, etc.
                                     if isinstance(decorator, ast.Call) and hasattr(decorator.func, 'attr'):
-                                        if decorator.func.attr in ['get', 'post', 'put', 'delete', 'patch']:
+                                        if decorator.func.attr.lower() in ['get', 'post', 'put', 'delete', 'patch']:
                                             routes.append({
                                                 "file": file_path,
                                                 "method": decorator.func.attr.upper(),
                                                 "function": node.name,
-                                                "path": self._extract_arg(decorator.args[0]) if decorator.args else "unknown"
+                                                "path": self._extract_arg(decorator.args[0]) if decorator.args else "unknown",
+                                                "lineno": node.lineno
                                             })
+                            
+                            # Phase 2: Detect Hidden Router inclusions
+                            if isinstance(node, ast.Expr) and isinstance(node.value, ast.Call):
+                                call = node.value
+                                if hasattr(call.func, 'attr') and call.func.attr == "include_router":
+                                    routes.append({
+                                        "file": file_path,
+                                        "type": "ROUTER_INCLUSION",
+                                        "evidence": "Found include_router call",
+                                        "lineno": node.lineno
+                                    })
                 except:
                     pass
         return routes
