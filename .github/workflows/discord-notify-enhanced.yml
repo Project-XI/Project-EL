@@ -1,0 +1,126 @@
+name: Discord Commit Notification (Enhanced)
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+      - master
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Analyze commits
+        id: analysis
+        run: |
+          # Get diff summary
+          DIFF_SUMMARY=$(git diff HEAD~1 HEAD --stat 2>/dev/null || echo "Initial commit")
+          
+          # Categorize changes
+          BACKEND_CHANGES=$(git diff --name-only HEAD~1 HEAD 2>/dev/null | grep -c '^backend/' || echo "0")
+          FRONTEND_CHANGES=$(git diff --name-only HEAD~1 HEAD 2>/dev/null | grep -c '^frontend/' || echo "0")
+          DOCS_CHANGES=$(git diff --name-only HEAD~1 HEAD 2>/dev/null | grep -c '^Docs/' || echo "0")
+          TEST_CHANGES=$(git diff --name-only HEAD~1 HEAD 2>/dev/null | grep -c '^tests/' || echo "0")
+          
+          # Detect change types
+          FEATURES=$(git log -1 --format=%B | grep -i -E '(feat|feature|add|new)' && echo "✨ Features" || echo "")
+          FIXES=$(git log -1 --format=%B | grep -i -E '(fix|bug|patch|resolve)' && echo "🐛 Bug Fixes" || echo "")
+          REFACTOR=$(git log -1 --format=%B | grep -i -E '(refactor|clean|improve)' && echo "♻️ Refactoring" || echo "")
+          
+          echo "backend_changes=$BACKEND_CHANGES" >> $GITHUB_OUTPUT
+          echo "frontend_changes=$FRONTEND_CHANGES" >> $GITHUB_OUTPUT
+          echo "docs_changes=$DOCS_CHANGES" >> $GITHUB_OUTPUT
+          echo "test_changes=$TEST_CHANGES" >> $GITHUB_OUTPUT
+          echo "features=$FEATURES" >> $GITHUB_OUTPUT
+          echo "fixes=$FIXES" >> $GITHUB_OUTPUT
+          echo "refactor=$REFACTOR" >> $GITHUB_OUTPUT
+
+      - name: Get commit info
+        id: commit_info
+        run: |
+          COMMIT_SHA=${{ github.sha }}
+          COMMIT_MESSAGE=$(git log -1 --format=%B)
+          COMMIT_AUTHOR=$(git log -1 --format=%an)
+          COMMIT_URL=${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}
+          BRANCH_NAME=${GITHUB_REF#refs/heads/}
+          
+          # Get file stats
+          FILES_CHANGED=$(git diff --name-only HEAD~1 HEAD 2>/dev/null | wc -l)
+          INSERTIONS=$(git diff --numstat HEAD~1 HEAD 2>/dev/null | awk '{sum+=$1} END {print sum}')
+          DELETIONS=$(git diff --numstat HEAD~1 HEAD 2>/dev/null | awk '{sum+=$2} END {print sum}')
+          
+          # Get changed files with status
+          CHANGED_FILES=$(git diff --name-status HEAD~1 HEAD 2>/dev/null | awk '{printf "• %s %s\n", ($1=="A" ? "📝" : $1=="M" ? "✏️" : $1=="D" ? "🗑️" : "📄"), $2}' | head -8)
+          
+          echo "commit_sha=${COMMIT_SHA:0:7}" >> $GITHUB_OUTPUT
+          echo "commit_message=$(echo "$COMMIT_MESSAGE" | head -1)" >> $GITHUB_OUTPUT
+          echo "commit_author=$COMMIT_AUTHOR" >> $GITHUB_OUTPUT
+          echo "commit_url=$COMMIT_URL" >> $GITHUB_OUTPUT
+          echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
+          echo "files_changed=$FILES_CHANGED" >> $GITHUB_OUTPUT
+          echo "insertions=${INSERTIONS:-0}" >> $GITHUB_OUTPUT
+          echo "deletions=${DELETIONS:-0}" >> $GITHUB_OUTPUT
+          echo "changed_files<<EOF" >> $GITHUB_OUTPUT
+          echo "$CHANGED_FILES" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Send Discord notification
+        run: |
+          PAYLOAD=$(cat <<'EOF'
+          {
+            "username": "🤖 GitHub Bot",
+            "avatar_url": "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png",
+            "embeds": [{
+              "title": "📝 New Commit Pushed",
+              "description": "${{ steps.commit_info.outputs.commit_message }}",
+              "url": "${{ steps.commit_info.outputs.commit_url }}",
+              "color": 3447003,
+              "fields": [
+                {
+                  "name": "🔗 Commit",
+                  "value": "[${{ steps.commit_info.outputs.commit_sha }}](${{ steps.commit_info.outputs.commit_url }})",
+                  "inline": true
+                },
+                {
+                  "name": "👤 Author",
+                  "value": "${{ steps.commit_info.outputs.commit_author }}",
+                  "inline": true
+                },
+                {
+                  "name": "🌿 Branch",
+                  "value": "`${{ steps.commit_info.outputs.branch_name }}`",
+                  "inline": true
+                },
+                {
+                  "name": "📊 Change Summary",
+                  "value": "**Files:** ${{ steps.commit_info.outputs.files_changed }} | **+${{ steps.commit_info.outputs.insertions }}** | **-${{ steps.commit_info.outputs.deletions }}**",
+                  "inline": false
+                },
+                {
+                  "name": "🎯 Impact Areas",
+                  "value": "Backend: ${{ steps.analysis.outputs.backend_changes }} | Frontend: ${{ steps.analysis.outputs.frontend_changes }} | Docs: ${{ steps.analysis.outputs.docs_changes }} | Tests: ${{ steps.analysis.outputs.test_changes }}",
+                  "inline": false
+                },
+                {
+                  "name": "📄 Changed Files",
+                  "value": "${{ steps.commit_info.outputs.changed_files }}",
+                  "inline": false
+                }
+              ],
+              "timestamp": "$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+            }]
+          }
+          EOF
+          )
+          
+          curl -X POST \
+            -H 'Content-type: application/json' \
+            --data "$PAYLOAD" \
+            "${{ secrets.DISCORD_WEBHOOK_URL }}"
