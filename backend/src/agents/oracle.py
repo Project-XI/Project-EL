@@ -25,11 +25,15 @@ class OracleAgent(BaseAgent):
         self.prompt_version = prompt_version
         self.llm_service = LLMService()
 
-    async def process(self, session_id: str, input_data: Dict[str, Any]) -> StructuredContext:
+    async def process(self, session_id: str, input_data: Dict[str, Any], log_callback=None) -> StructuredContext:
         """
         Orchestrates the project intelligence pipeline.
         input_data: {"report_path": str, "repo_url": str}
         """
+        async def send_log(msg: str, type: str = "info"):
+            if log_callback:
+                await log_callback({"message": msg, "type": type})
+                
         self.log_info(f"Starting analysis for session {session_id}")
         self.emit_event(session_id, EventType.SESSION_STARTED, {"agent": self.name})
 
@@ -59,11 +63,21 @@ class OracleAgent(BaseAgent):
 
         if repo_url:
             try:
+                import os
                 target_dir = "./backend/data/cloned_repos"
+                repo_name = repo_url.split("/")[-1].replace(".git", "")
+                clone_path = os.path.join(target_dir, repo_name)
+                
+                if os.path.exists(clone_path):
+                    await send_log(f"[ORACLE] Using cached repository at {clone_path}...")
+                else:
+                    await send_log("[ORACLE] Cloning repository...")
+                    
                 repo_path = RepoCloner.clone(repo_url, target_dir)
                 if repo_path:
                     self.emit_event(session_id, EventType.REPO_CLONED, {"url": repo_url})
                     
+                    await send_log("[ORACLE] Detecting framework and structure...")
                     repo_structure = StructureAnalyzer.analyze(repo_path)
                     self.emit_event(session_id, EventType.STRUCTURE_ANALYZED, {"path": repo_path})
                     
@@ -73,6 +87,8 @@ class OracleAgent(BaseAgent):
                     file_summaries = FileSummarizer.summarize_structure(repo_structure)
                     
                     # Structural Intelligence
+                    await send_log("[ORACLE] Parsing AST nodes...")
+                    await send_log("[ORACLE] Building execution graph...")
                     project_graph = ProjectRelationshipEngine.infer_relationships(repo_path, repo_detections, repo_structure)
                     project_graph = GraphConfidenceEngine.refine_scores(project_graph)
                     self.emit_event(session_id, EventType.PROJECT_GRAPH_BUILT, {"nodes": len(project_graph.nodes), "edges": len(project_graph.edges)})
@@ -82,9 +98,11 @@ class OracleAgent(BaseAgent):
                 repo_path = None
 
         # 4. Intelligence Synthesis
+        await send_log("[ORACLE] Running explainability engine...")
         arch_inference = ArchitectureInferenceEngine.infer_architecture(project_graph, repo_detections)
         reasoning = ReasoningInferenceEngine.infer_reasoning(repo_detections)
         tradeoffs = ReasoningInferenceEngine.infer_tradeoffs(repo_detections)
+        await send_log("[ORACLE] Generating viva intelligence...")
         viva_targets = VivaIntelligenceEngine.generate_targets(repo_detections, arch_inference)
         inconsistencies = VivaIntelligenceEngine.detect_inconsistencies(doc_text, repo_detections)
         complexity_mismatch = VivaIntelligenceEngine.detect_complexity_mismatch(arch_inference, repo_detections)
@@ -109,9 +127,11 @@ class OracleAgent(BaseAgent):
         # 5. NEW: Implementation Intelligence Phase
         if repo_url and repo_path:
             self.log_info("Starting implementation flow analysis...")
+            await send_log("[ORACLE] Tracing active code logic flows...")
             context = ImplementationFlowEngine.analyze_implementation(repo_path, repo_structure, context)
             self.emit_event(session_id, EventType.IMPLEMENTATION_FLOW_DETECTED, {"nodes": len(context.execution_graph.nodes)})
 
         self.emit_event(session_id, EventType.CONTEXT_READY, {"project_name": context.project_name.value})
+        await send_log("[ORACLE] Analysis complete.", "success")
         
         return context

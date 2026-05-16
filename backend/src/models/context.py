@@ -87,6 +87,12 @@ class VivaTarget(BaseModel):
     difficulty: str # "easy", "medium", "hard"
     importance_score: float
     focus: str
+    # Extended intelligence fields
+    category: str = "Architecture"  # Architecture, Tradeoff, Security, Scalability, Failure-Path, Runtime
+    depth_score: float = 5.0       # 0-10 engineering depth
+    related_node: str = ""         # graph node this question targets
+    confidence: float = 0.8        # engine confidence in question relevance
+    reasoning_summary: str = ""    # brief explanation of why this was generated
 
 class StructuredContext(BaseModel):
     project_name: EvidenceModel

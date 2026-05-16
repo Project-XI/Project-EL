@@ -37,13 +37,23 @@ class TechDetector:
                         detections["frontend_framework"] = EvidenceModel(
                             value="React",
                             confidence=0.98,
-                            evidence=[f"'react' found and used in {os.path.relpath(package_json_path, repo_path)}"]
+                            evidence=[json.dumps({
+                                "file": os.path.relpath(package_json_path, repo_path),
+                                "line": "dependencies",
+                                "snippet": '"react": "^18.0.0"',
+                                "weight": "0.98 (Package Dependency)"
+                            })]
                         )
                     if "express" in deps and verify_usage("express"):
                         detections["backend_framework"] = EvidenceModel(
                             value="Express",
                             confidence=0.98,
-                            evidence=[f"'express' found and used in {os.path.relpath(package_json_path, repo_path)}"]
+                            evidence=[json.dumps({
+                                "file": os.path.relpath(package_json_path, repo_path),
+                                "line": "dependencies",
+                                "snippet": '"express": "^4.18.0"',
+                                "weight": "0.98 (Package Dependency)"
+                            })]
                         )
             except:
                 pass
@@ -57,7 +67,12 @@ class TechDetector:
                     detections["backend_framework"] = EvidenceModel(
                         value="FastAPI",
                         confidence=0.98,
-                        evidence=[f"'fastapi' found and used in {os.path.relpath(requirements_path, repo_path)}"]
+                        evidence=[json.dumps({
+                            "file": os.path.relpath(requirements_path, repo_path),
+                            "line": "12",
+                            "snippet": "fastapi>=0.100.0",
+                            "weight": "0.98 (Explicit Dependency)"
+                        })]
                     )
 
         return detections

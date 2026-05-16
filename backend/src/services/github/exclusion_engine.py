@@ -1,33 +1,32 @@
 import os
-from typing import List
 
 class ExclusionEngine:
     """
-    Handles directory and file exclusions for efficient large-scale repository analysis.
+    Filters out noise files and directories (like node_modules, .git)
+    from the repository analysis pipeline.
     """
-    DEFAULT_EXCLUSIONS = [
-        "node_modules", ".git", "__pycache__", "venv", "env", 
-        "build", "dist", "target", ".next", ".cache", "out"
-    ]
     
-    DEFAULT_EXTENSIONS = [
-        ".exe", ".bin", ".pyc", ".png", ".jpg", ".jpeg", ".gif", 
-        ".svg", ".mp4", ".mov", ".zip", ".tar.gz", ".pdf"
-    ]
+    EXCLUDED_DIRS = {
+        "node_modules", ".git", "__pycache__", "venv", ".venv", 
+        "dist", "build", "coverage", ".next"
+    }
+    
+    EXCLUDED_EXTS = {
+        ".pyc", ".log", ".DS_Store", ".sqlite3", ".pyo", 
+        ".pyd", ".so", ".dll", ".class"
+    }
 
     @classmethod
     def is_excluded(cls, path: str) -> bool:
-        parts = path.split(os.sep)
-        # Check for excluded directories
-        if any(ex in parts for ex in cls.DEFAULT_EXCLUSIONS):
-            return True
+        basename = os.path.basename(path)
         
-        # Check for excluded extensions
-        if any(path.endswith(ext) for ext in cls.DEFAULT_EXTENSIONS):
+        # Check if it's an excluded directory/file exactly
+        if basename in cls.EXCLUDED_DIRS:
             return True
             
+        # Check extensions
+        for ext in cls.EXCLUDED_EXTS:
+            if path.endswith(ext):
+                return True
+                
         return False
-
-    @classmethod
-    def filter_structure(cls, structure: List[str]) -> List[str]:
-        return [p for p in structure if not cls.is_excluded(p)]
