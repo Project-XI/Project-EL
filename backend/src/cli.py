@@ -45,26 +45,7 @@ async def evaluate_cmd(args):
     else:
         print("\n[✓] No major mismatches detected.")
 
-async def explain_cmd(args):
-    print(f"[*] Explaining claim: {args.claim_id}")
-    # In a real scenario, we'd need a way to load the last context. 
-    # For now, we simulate by running analysis if no context provided.
-    from src.services.intelligence.explainability_engine import ExplainabilityEngine
-    oracle = OracleAgent()
-    context = await oracle.process("cli_explain", {"repo_url": args.repo_url if hasattr(args, 'repo_url') else "https://github.com/Project-XI/Project-EL"})
-    
-    explanation = ExplainabilityEngine.explain_claim(context, args.claim_id)
-    
-    if "error" in explanation:
-        print(f"[!] {explanation['error']}")
-    else:
-        print(f"\n--- Explanation: {args.claim_id} ---")
-        print(f"Claim: {explanation['claim']}")
-        print(f"Reasoning: {explanation['reasoning']}")
-        print(f"Confidence: {explanation['confidence']*100:.1f}%")
-        print("\nEvidence:")
-        for ev in explanation['evidence']:
-            print(f"  - {ev}")
+
 
 async def debug_cmd(args):
     print(f"[*] Debugging ExecutionGraph for: {args.repo_url}")
@@ -98,10 +79,7 @@ def main():
     evaluate_parser.add_argument("repo_url", help="Repository URL to evaluate")
     evaluate_parser.add_argument("--expected", required=True, help="Path to expected output JSON")
 
-    # Explain
-    explain_parser = subparsers.add_parser("explain", help="Explain an analysis claim")
-    explain_parser.add_argument("claim_id", help="ID of the claim to explain")
-    
+
     # Debug
     debug_parser = subparsers.add_parser("debug", help="Debug the ExecutionGraph")
     debug_parser.add_argument("repo_url", help="Repository URL to debug")
@@ -112,8 +90,7 @@ def main():
         asyncio.run(analyze_cmd(args))
     elif args.command == "evaluate":
         asyncio.run(evaluate_cmd(args))
-    elif args.command == "explain":
-        asyncio.run(explain_cmd(args))
+
     elif args.command == "debug":
         asyncio.run(debug_cmd(args))
     else:
