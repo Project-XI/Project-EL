@@ -10,36 +10,41 @@ class VivaIntelligenceEngine:
     def generate_targets(detections: Dict[str, Any], arch: EvidenceModel) -> List[VivaTarget]:
         targets = []
         
-        # 1. Architecture specific targets
+        # 1. Tradeoff-based targets (Why X over Y?)
         if "REST" in arch.value:
             targets.append(VivaTarget(
                 topic="Architecture",
-                question_target="REST vs GraphQL",
+                question_target="Tradeoff: REST vs GraphQL",
                 difficulty="medium",
                 importance_score=0.8,
-                focus="Why REST was preferred over GraphQL for this project."
+                focus="Given the data complexity, why was REST's fixed endpoint structure chosen over GraphQL's flexibility?"
             ))
 
-        # 2. Tech specific targets
-        for key, model in detections.items():
-            if model.value == "FastAPI":
-                targets.append(VivaTarget(
-                    topic="Backend",
-                    question_target="Async performance",
-                    difficulty="hard",
-                    importance_score=0.9,
-                    focus="How FastAPI handles concurrent requests compared to Flask."
-                ))
-            if "JWT" in str(model.value):
-                targets.append(VivaTarget(
-                    topic="Security",
-                    question_target="Token revocation",
-                    difficulty="hard",
-                    importance_score=0.85,
-                    focus="How the system handles token invalidation or logout."
-                ))
-                
-        return targets
+        # 2. Tech-pair Reasoning (FastAPI + JWT example)
+        has_fastapi = any(m.value == "FastAPI" for m in detections.values())
+        has_jwt = any("JWT" in str(m.value) for m in detections.values())
+        
+        if has_fastapi and has_jwt:
+            targets.append(VivaTarget(
+                topic="Security",
+                question_target="Implementation: JWT Middleware Lifecycle",
+                difficulty="hard",
+                importance_score=0.95,
+                focus="What happens if the JWT verification fails inside the FastAPI middleware chain? Is the failure path gracefully handled before reaching the business logic?"
+            ))
+
+        # 3. Scalability Reasoning
+        if any("SQL" in str(m.value) for m in detections.values()):
+            targets.append(VivaTarget(
+                topic="Database",
+                question_target="Scaling: Vertical vs Horizontal",
+                difficulty="medium",
+                importance_score=0.75,
+                focus="If the request load triples, what is the primary bottleneck for your relational database implementation?"
+            ))
+
+        from src.services.intelligence.viva_question_ranker import VivaQuestionRanker
+        return VivaQuestionRanker.rank_targets(targets)
 
     @staticmethod
     def detect_inconsistencies(doc_text: str, detections: Dict[str, Any]) -> List[InconsistencyFlag]:

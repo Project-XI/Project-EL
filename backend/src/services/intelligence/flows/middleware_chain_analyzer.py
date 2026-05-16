@@ -1,6 +1,6 @@
 from typing import List, Dict, Any
-from ..intermediate_representation.execution_graph_builder import ExecutionGraphBuilder
-from ....models.context import EvidenceModel, FlowNodeType
+from src.services.intelligence.intermediate_representation.execution_graph_builder import ExecutionGraphBuilder
+from src.models.context import EvidenceModel, FlowNodeType
 
 class MiddlewareChainAnalyzer:
     """

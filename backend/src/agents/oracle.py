@@ -1,23 +1,23 @@
 import os
 from typing import Any, Dict, List, Optional
-from .base import BaseAgent
-from ..models.events import EventType
-from ..models.context import StructuredContext, EvidenceModel, ProjectGraph
-from ..services.parsing.pdf_parser import PDFParser
-from ..services.parsing.docx_parser import DocxParser
-from ..services.parsing.text_cleaner import TextCleaner
-from ..services.parsing.entity_extractor import EntityExtractor
-from ..services.github.repo_cloner import RepoCloner
-from ..services.github.structure_analyzer import StructureAnalyzer
-from ..services.github.tech_detector import TechDetector
-from ..services.github.file_summarizer import FileSummarizer
-from ..services.intelligence.project_relationship_engine import ProjectRelationshipEngine
-from ..services.intelligence.architecture_inference_engine import ArchitectureInferenceEngine
-from ..services.intelligence.reasoning_inference_engine import ReasoningInferenceEngine
-from ..services.intelligence.viva_intelligence_engine import VivaIntelligenceEngine
-from ..services.intelligence.graph_confidence_engine import GraphConfidenceEngine
-from ..services.intelligence.implementation_flow_engine import ImplementationFlowEngine
-from ..services.llm import LLMService
+from src.agents.base import BaseAgent
+from src.models.events import EventType
+from src.models.context import StructuredContext, EvidenceModel, ProjectGraph
+from src.services.parsing.pdf_parser import PDFParser
+from src.services.parsing.docx_parser import DocxParser
+from src.services.parsing.text_cleaner import TextCleaner
+from src.services.parsing.entity_extractor import EntityExtractor
+from src.services.github.repo_cloner import RepoCloner
+from src.services.github.structure_analyzer import StructureAnalyzer
+from src.services.github.tech_detector import TechDetector
+from src.services.github.file_summarizer import FileSummarizer
+from src.services.intelligence.project_relationship_engine import ProjectRelationshipEngine
+from src.services.intelligence.architecture_inference_engine import ArchitectureInferenceEngine
+from src.services.intelligence.reasoning_inference_engine import ReasoningInferenceEngine
+from src.services.intelligence.viva_intelligence_engine import VivaIntelligenceEngine
+from src.services.intelligence.graph_confidence_engine import GraphConfidenceEngine
+from src.services.intelligence.implementation_flow_engine import ImplementationFlowEngine
+from src.services.llm import LLMService
 
 class OracleAgent(BaseAgent):
     def __init__(self, prompt_version: str = "v2"):
@@ -58,23 +58,28 @@ class OracleAgent(BaseAgent):
         file_summaries = []
 
         if repo_url:
-            target_dir = "./backend/data/cloned_repos"
-            repo_path = RepoCloner.clone(repo_url, target_dir)
-            if repo_path:
-                self.emit_event(session_id, EventType.REPO_CLONED, {"url": repo_url})
-                
-                repo_structure = StructureAnalyzer.analyze(repo_path)
-                self.emit_event(session_id, EventType.STRUCTURE_ANALYZED, {"path": repo_path})
-                
-                repo_detections = TechDetector.detect_from_files(repo_path, repo_structure)
-                self.emit_event(session_id, EventType.TECH_STACK_DETECTED, {"count": len(repo_detections)})
-                
-                file_summaries = FileSummarizer.summarize_structure(repo_structure)
-                
-                # Structural Intelligence
-                project_graph = ProjectRelationshipEngine.infer_relationships(repo_path, repo_detections, repo_structure)
-                project_graph = GraphConfidenceEngine.refine_scores(project_graph)
-                self.emit_event(session_id, EventType.PROJECT_GRAPH_BUILT, {"nodes": len(project_graph.nodes), "edges": len(project_graph.edges)})
+            try:
+                target_dir = "./backend/data/cloned_repos"
+                repo_path = RepoCloner.clone(repo_url, target_dir)
+                if repo_path:
+                    self.emit_event(session_id, EventType.REPO_CLONED, {"url": repo_url})
+                    
+                    repo_structure = StructureAnalyzer.analyze(repo_path)
+                    self.emit_event(session_id, EventType.STRUCTURE_ANALYZED, {"path": repo_path})
+                    
+                    repo_detections = TechDetector.detect_from_files(repo_path, repo_structure)
+                    self.emit_event(session_id, EventType.TECH_STACK_DETECTED, {"count": len(repo_detections)})
+                    
+                    file_summaries = FileSummarizer.summarize_structure(repo_structure)
+                    
+                    # Structural Intelligence
+                    project_graph = ProjectRelationshipEngine.infer_relationships(repo_path, repo_detections, repo_structure)
+                    project_graph = GraphConfidenceEngine.refine_scores(project_graph)
+                    self.emit_event(session_id, EventType.PROJECT_GRAPH_BUILT, {"nodes": len(project_graph.nodes), "edges": len(project_graph.edges)})
+            except Exception as e:
+                self.log_info(f"Repository analysis failed gracefully: {str(e)}")
+                # We continue with whatever doc_text we have
+                repo_path = None
 
         # 4. Intelligence Synthesis
         arch_inference = ArchitectureInferenceEngine.infer_architecture(project_graph, repo_detections)

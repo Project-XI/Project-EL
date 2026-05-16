@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Optional
-from ..core.events import EventEmitter
-from ..models.events import EventType
+from src.core.events import EventEmitter
+from src.models.events import EventType
 
 class BaseAgent(ABC):
     def __init__(self, name: str):

@@ -1,6 +1,6 @@
 import logging
 from typing import Any, Dict
-from ..models.events import PlatformEvent, EventType
+from src.models.events import PlatformEvent, EventType
 
 logger = logging.getLogger(__name__)
 

@@ -9,11 +9,21 @@ class GraphConfidenceEngine:
     @staticmethod
     def refine_scores(graph: ProjectGraph) -> ProjectGraph:
         for edge in graph.edges:
-            # Heuristic: More evidence = higher confidence
-            evidence_count = len(edge.evidence)
-            if evidence_count > 2:
-                edge.confidence = min(0.99, edge.confidence + 0.05)
-            elif evidence_count == 1:
-                edge.confidence = min(0.9, edge.confidence)
+            # Weighted Evidence Aggregation
+            # Signals: 
+            # - Explicit import (Weight: 0.6)
+            # - Config file entry (Weight: 0.3)
+            # - Indirect call (Weight: 0.1)
+            
+            score = 0.0
+            for ev in edge.evidence:
+                if any(x in ev.lower() for x in ["import", "from"]):
+                    score += 0.6
+                elif any(x in ev.lower() for x in ["config", "json", "env", "yml"]):
+                    score += 0.3
+                else:
+                    score += 0.1
+            
+            edge.confidence = min(0.99, score)
                 
         return graph

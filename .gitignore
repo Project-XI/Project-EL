@@ -17,3 +17,5 @@ ENV/
 
 # TWELVE Data
 backend/data/
+backend/evaluation/results/
+backend/tests/validation_report.html

@@ -1,0 +1,8 @@
+{
+  "repo_name": "Project-EL",
+  "expected_stack": ["FastAPI"],
+  "expected_auth": "Unknown",
+  "expected_architecture": "FastAPI-based Architecture",
+  "expected_protected_routes": 0,
+  "expected_security_risks": []
+}
