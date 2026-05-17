@@ -56,11 +56,16 @@ jobs:
             "username": "GitHub Bot",
             "avatar_url": "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png",
             "embeds": [{
-              "title": "📝 New Commit Pushed",
+              "title": "📝 New Commit Pushed (Notify #${{ github.run_number }})",
               "description": "${{ steps.commit_info.outputs.commit_message }}",
               "url": "${{ steps.commit_info.outputs.commit_url }}",
               "color": 3447003,
               "fields": [
+                {
+                  "name": "🔔 Notify",
+                  "value": "#${{ github.run_number }} (attempt ${{ github.run_attempt }})",
+                  "inline": true
+                },
                 {
                   "name": "🔗 Commit",
                   "value": "[${{ steps.commit_info.outputs.commit_sha }}](${{ steps.commit_info.outputs.commit_url }})",
