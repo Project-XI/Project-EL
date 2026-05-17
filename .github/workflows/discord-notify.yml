@@ -55,114 +55,60 @@ jobs:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
           MENTION_USER_ID: ${{ secrets.DISCORD_MENTION_USER_ID }}
           COMMIT_MESSAGE: ${{ steps.commit_info.outputs.commit_message }}
+          COMMIT_SHA_SHORT: ${{ steps.commit_info.outputs.commit_sha }}
+          COMMIT_URL: ${{ steps.commit_info.outputs.commit_url }}
+          COMMIT_AUTHOR: ${{ steps.commit_info.outputs.commit_author }}
+          BRANCH_NAME: ${{ steps.commit_info.outputs.branch_name }}
+          FILES_CHANGED: ${{ steps.commit_info.outputs.files_changed }}
+          INSERTIONS: ${{ steps.commit_info.outputs.insertions }}
+          DELETIONS: ${{ steps.commit_info.outputs.deletions }}
+          CHANGED_FILES: ${{ steps.commit_info.outputs.changed_files }}
         run: |
           TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
-          # Properly escape the commit message for JSON
-          ESCAPED_MESSAGE=$(echo "$COMMIT_MESSAGE" | sed 's/\\/\\\\/g' | sed 's/"/\\"/g' | sed 's/`/\\`/g' | sed -z 's/\n/\\n/g')
+          # Template for the embed
+          EMBED_TEMPLATE=$(cat <<EOF
+          {
+            "title": "📝 New Commit Pushed (Notify #${{ github.run_number }})",
+            "description": "%s",
+            "url": "$COMMIT_URL",
+            "color": 3447003,
+            "fields": [
+              {"name": "🔔 Notify", "value": "#${{ github.run_number }} (attempt ${{ github.run_attempt }})", "inline": true},
+              {"name": "🔗 Commit", "value": "[$COMMIT_SHA_SHORT]($COMMIT_URL)", "inline": true},
+              {"name": "👤 Author", "value": "$COMMIT_AUTHOR", "inline": true},
+              {"name": "🌿 Branch", "value": "\`$BRANCH_NAME\`", "inline": true},
+              {"name": "📊 Stats", "value": "**Files:** $FILES_CHANGED | **+$INSERTIONS** | **-$DELETIONS**", "inline": false},
+              {"name": "📄 Changed Files", "value": "%s", "inline": false}
+            ],
+            "timestamp": "$TIMESTAMP"
+          }
+          EOF
+          )
 
+          # Use jq to safely build the final JSON payload
           if [ -n "$MENTION_USER_ID" ]; then
-            PAYLOAD=$(cat <<EOF
-          {
-            "content": "<@$MENTION_USER_ID>",
-            "allowed_mentions": {
-              "users": ["$MENTION_USER_ID"]
-            },
-            "username": "GitHub Bot",
-            "avatar_url": "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png",
-            "embeds": [{
-              "title": "📝 New Commit Pushed (Notify #${{ github.run_number }})",
-              "description": "$ESCAPED_MESSAGE",
-              "url": "${{ steps.commit_info.outputs.commit_url }}",
-              "color": 3447003,
-              "fields": [
-                {
-                  "name": "🔔 Notify",
-                  "value": "#${{ github.run_number }} (attempt ${{ github.run_attempt }})",
-                  "inline": true
-                },
-                {
-                  "name": "🔗 Commit",
-                  "value": "[${{ steps.commit_info.outputs.commit_sha }}](${{ steps.commit_info.outputs.commit_url }})",
-                  "inline": true
-                },
-                {
-                  "name": "👤 Author",
-                  "value": "${{ steps.commit_info.outputs.commit_author }}",
-                  "inline": true
-                },
-                {
-                  "name": "🌿 Branch",
-                  "value": "`${{ steps.commit_info.outputs.branch_name }}`",
-                  "inline": true
-                },
-                {
-                  "name": "📊 Stats",
-                  "value": "**Files:** ${{ steps.commit_info.outputs.files_changed }} | **+${{ steps.commit_info.outputs.insertions }}** | **-${{ steps.commit_info.outputs.deletions }}**",
-                  "inline": false
-                },
-                {
-                  "name": "📄 Changed Files",
-                  "value": "${{ steps.commit_info.outputs.changed_files }}",
-                  "inline": false
-                }
-              ],
-              "timestamp": "${TIMESTAMP}"
-            }]
-          }
-          EOF
-          )
+            JSON_PAYLOAD=$(jq -n \
+              --arg content "<@$MENTION_USER_ID>" \
+              --argjson allowed_mentions "{\"users\":[\"$MENTION_USER_ID\"]}" \
+              --arg username "GitHub Bot" \
+              --arg avatar_url "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" \
+              --arg commit_msg "$COMMIT_MESSAGE" \
+              --arg changed_files "$CHANGED_FILES" \
+              --argjson embed_template "$(printf "$EMBED_TEMPLATE" "" "")" \
+              '$embed_template.description = $commit_msg | $embed_template.fields[5].value = $changed_files | {username: $username, avatar_url: $avatar_url, content: $content, allowed_mentions: $allowed_mentions, embeds: [$embed_template]}')
           else
-            PAYLOAD=$(cat <<EOF
-          {
-            "username": "GitHub Bot",
-            "avatar_url": "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png",
-            "embeds": [{
-              "title": "📝 New Commit Pushed (Notify #${{ github.run_number }})",
-              "description": "$ESCAPED_MESSAGE",
-              "url": "${{ steps.commit_info.outputs.commit_url }}",
-              "color": 3447003,
-              "fields": [
-                {
-                  "name": "🔔 Notify",
-                  "value": "#${{ github.run_number }} (attempt ${{ github.run_attempt }})",
-                  "inline": true
-                },
-                {
-                  "name": "🔗 Commit",
-                  "value": "[${{ steps.commit_info.outputs.commit_sha }}](${{ steps.commit_info.outputs.commit_url }})",
-                  "inline": true
-                },
-                {
-                  "name": "👤 Author",
-                  "value": "${{ steps.commit_info.outputs.commit_author }}",
-                  "inline": true
-                },
-                {
-                  "name": "🌿 Branch",
-                  "value": "`${{ steps.commit_info.outputs.branch_name }}`",
-                  "inline": true
-                },
-                {
-                  "name": "📊 Stats",
-                  "value": "**Files:** ${{ steps.commit_info.outputs.files_changed }} | **+${{ steps.commit_info.outputs.insertions }}** | **-${{ steps.commit_info.outputs.deletions }}**",
-                  "inline": false
-                },
-                {
-                  "name": "📄 Changed Files",
-                  "value": "${{ steps.commit_info.outputs.changed_files }}",
-                  "inline": false
-                }
-              ],
-              "timestamp": "${TIMESTAMP}"
-            }]
-          }
-          EOF
-          )
+            JSON_PAYLOAD=$(jq -n \
+              --arg username "GitHub Bot" \
+              --arg avatar_url "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" \
+              --arg commit_msg "$COMMIT_MESSAGE" \
+              --arg changed_files "$CHANGED_FILES" \
+              --argjson embed_template "$(printf "$EMBED_TEMPLATE" "" "")" \
+              '$embed_template.description = $commit_msg | $embed_template.fields[5].value = $changed_files | {username: $username, avatar_url: $avatar_url, embeds: [$embed_template]}')
           fi
 
           # send and capture response
-          RESPONSE=$(curl -s -w "\n%{http_code}" -X POST -H 'Content-type: application/json' --data "$PAYLOAD" "${{ secrets.DISCORD_WEBHOOK_URL }}")
+          RESPONSE=$(curl -s -w "\n%{http_code}" -X POST -H 'Content-type: application/json' --data-raw "$JSON_PAYLOAD" "${{ secrets.DISCORD_WEBHOOK_URL }}")
           # split body and status
           HTTP_STATUS=$(echo "$RESPONSE" | tail -n1)
           BODY=$(echo "$RESPONSE" | sed '$d')
