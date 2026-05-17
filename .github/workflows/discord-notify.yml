@@ -36,7 +36,10 @@ jobs:
           CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD 2>/dev/null | head -5 | sed 's/^/• /')
           
           echo "commit_sha=${COMMIT_SHA:0:7}" >> $GITHUB_OUTPUT
-          echo "commit_message=$(echo "$COMMIT_MESSAGE" | head -1)" >> $GITHUB_OUTPUT
+          echo "commit_message<<EOF" >> $GITHUB_OUTPUT
+          echo "$COMMIT_MESSAGE" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
           echo "commit_author=$COMMIT_AUTHOR" >> $GITHUB_OUTPUT
           echo "commit_url=$COMMIT_URL" >> $GITHUB_OUTPUT
           echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
@@ -48,9 +51,15 @@ jobs:
           echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Send Discord notification
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          MENTION_USER_ID: ${{ secrets.DISCORD_MENTION_USER_ID }}
+          COMMIT_MESSAGE: ${{ steps.commit_info.outputs.commit_message }}
         run: |
           TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-          MENTION_USER_ID="${{ secrets.DISCORD_MENTION_USER_ID }}"
+
+          # Properly escape the commit message for JSON
+          ESCAPED_MESSAGE=$(echo "$COMMIT_MESSAGE" | sed 's/\\/\\\\/g' | sed 's/"/\\"/g' | sed 's/`/\\`/g' | sed -z 's/\n/\\n/g')
 
           if [ -n "$MENTION_USER_ID" ]; then
             PAYLOAD=$(cat <<EOF
@@ -63,7 +72,7 @@ jobs:
             "avatar_url": "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png",
             "embeds": [{
               "title": "📝 New Commit Pushed (Notify #${{ github.run_number }})",
-              "description": "${{ steps.commit_info.outputs.commit_message }}",
+              "description": "$ESCAPED_MESSAGE",
               "url": "${{ steps.commit_info.outputs.commit_url }}",
               "color": 3447003,
               "fields": [
@@ -110,7 +119,7 @@ jobs:
             "avatar_url": "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png",
             "embeds": [{
               "title": "📝 New Commit Pushed (Notify #${{ github.run_number }})",
-              "description": "${{ steps.commit_info.outputs.commit_message }}",
+              "description": "$ESCAPED_MESSAGE",
               "url": "${{ steps.commit_info.outputs.commit_url }}",
               "color": 3447003,
               "fields": [
