@@ -49,7 +49,9 @@ jobs:
 
       - name: Send Discord notification
         run: |
-          PAYLOAD=$(cat <<'EOF'
+          TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+          PAYLOAD=$(cat <<EOF
           {
             "username": "GitHub Bot",
             "avatar_url": "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png",
@@ -85,13 +87,21 @@ jobs:
                   "inline": false
                 }
               ],
-              "timestamp": "$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+              "timestamp": "${TIMESTAMP}"
             }]
           }
           EOF
           )
-          
-          curl -X POST \
-            -H 'Content-type: application/json' \
-            --data "$PAYLOAD" \
-            "${{ secrets.DISCORD_WEBHOOK_URL }}"
+
+          # send and capture response
+          RESPONSE=$(curl -s -w "\n%{http_code}" -X POST -H 'Content-type: application/json' --data "$PAYLOAD" "${{ secrets.DISCORD_WEBHOOK_URL }}")
+          # split body and status
+          HTTP_STATUS=$(echo "$RESPONSE" | tail -n1)
+          BODY=$(echo "$RESPONSE" | sed '$d')
+
+          echo "Discord response status: $HTTP_STATUS"
+          echo "Discord response body: $BODY"
+          if [ "$HTTP_STATUS" -ne 204 ] && [ "$HTTP_STATUS" -ne 200 ]; then
+            echo "Webhook failed with status $HTTP_STATUS" >&2
+            exit 1
+          fi
