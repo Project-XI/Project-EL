@@ -66,45 +66,49 @@ jobs:
         run: |
           TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
-          # Template for the embed
-          EMBED_TEMPLATE=$(cat <<EOF
-          {
-            "title": "📝 New Commit Pushed (Notify #${{ github.run_number }})",
-            "description": "%s",
-            "url": "$COMMIT_URL",
-            "color": 3447003,
-            "fields": [
-              {"name": "🔔 Notify", "value": "#${{ github.run_number }} (attempt ${{ github.run_attempt }})", "inline": true},
-              {"name": "🔗 Commit", "value": "[$COMMIT_SHA_SHORT]($COMMIT_URL)", "inline": true},
-              {"name": "👤 Author", "value": "$COMMIT_AUTHOR", "inline": true},
-              {"name": "🌿 Branch", "value": "\`$BRANCH_NAME\`", "inline": true},
-              {"name": "📊 Stats", "value": "**Files:** $FILES_CHANGED | **+$INSERTIONS** | **-$DELETIONS**", "inline": false},
-              {"name": "📄 Changed Files", "value": "%s", "inline": false}
-            ],
-            "timestamp": "$TIMESTAMP"
-          }
-          EOF
-          )
+          # Build the embed object directly with jq
+          EMBED_JSON=$(jq -n \
+            --arg desc "$COMMIT_MESSAGE" \
+            --arg url "$COMMIT_URL" \
+            --arg c_sha "$COMMIT_SHA_SHORT" \
+            --arg c_author "$COMMIT_AUTHOR" \
+            --arg branch "$BRANCH_NAME" \
+            --arg files_changed "$FILES_CHANGED" \
+            --arg insertions "$INSERTIONS" \
+            --arg deletions "$DELETIONS" \
+            --arg changed_files "$CHANGED_FILES" \
+            --arg timestamp "$TIMESTAMP" \
+            '{
+              "title": "📝 New Commit Pushed (Notify #${{ github.run_number }})",
+              "description": $desc,
+              "url": $url,
+              "color": 3447003,
+              "fields": [
+                {"name": "🔔 Notify", "value": "#${{ github.run_number }} (attempt ${{ github.run_attempt }})", "inline": true},
+                {"name": "🔗 Commit", "value": "[\($c_sha)](\($url))", "inline": true},
+                {"name": "👤 Author", "value": $c_author, "inline": true},
+                {"name": "🌿 Branch", "value": "`\($branch)`", "inline": true},
+                {"name": "📊 Stats", "value": "**Files:** \($files_changed) | **+\($insertions)** | **-\($deletions)**", "inline": false},
+                {"name": "📄 Changed Files", "value": $changed_files, "inline": false}
+              ],
+              "timestamp": $timestamp
+            }')
 
-          # Use jq to safely build the final JSON payload
+          # Build the final payload, adding mention if necessary
           if [ -n "$MENTION_USER_ID" ]; then
             JSON_PAYLOAD=$(jq -n \
               --arg content "<@$MENTION_USER_ID>" \
               --argjson allowed_mentions "{\"users\":[\"$MENTION_USER_ID\"]}" \
               --arg username "GitHub Bot" \
               --arg avatar_url "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" \
-              --arg commit_msg "$COMMIT_MESSAGE" \
-              --arg changed_files "$CHANGED_FILES" \
-              --argjson embed_template "$(printf "$EMBED_TEMPLATE" "" "")" \
-              '$embed_template.description = $commit_msg | $embed_template.fields[5].value = $changed_files | {username: $username, avatar_url: $avatar_url, content: $content, allowed_mentions: $allowed_mentions, embeds: [$embed_template]}')
+              --argjson embed "$EMBED_JSON" \
+              '{username: $username, avatar_url: $avatar_url, content: $content, allowed_mentions: $allowed_mentions, embeds: [$embed]}')
           else
             JSON_PAYLOAD=$(jq -n \
               --arg username "GitHub Bot" \
               --arg avatar_url "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" \
-              --arg commit_msg "$COMMIT_MESSAGE" \
-              --arg changed_files "$CHANGED_FILES" \
-              --argjson embed_template "$(printf "$EMBED_TEMPLATE" "" "")" \
-              '$embed_template.description = $commit_msg | $embed_template.fields[5].value = $changed_files | {username: $username, avatar_url: $avatar_url, embeds: [$embed_template]}')
+              --argjson embed "$EMBED_JSON" \
+              '{username: $username, avatar_url: $avatar_url, embeds: [$embed]}')
           fi
 
           # send and capture response
