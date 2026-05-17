@@ -6,11 +6,12 @@ on:
       - main
       - develop
       - master
+      - frontend
 
 jobs:
   notify:
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -20,87 +21,76 @@ jobs:
       - name: Get commit info
         id: commit_info
         run: |
-          COMMIT_SHA=${{ github.sha }}
-          COMMIT_MESSAGE=$(git log -1 --format=%B)
+          COMMIT_SHA="${{ github.sha }}"
+          COMMIT_MESSAGE=$(git log -1 --format=%B | head -1)
           COMMIT_AUTHOR=$(git log -1 --format=%an)
-          COMMIT_AUTHOR_EMAIL=$(git log -1 --format=%ae)
-          COMMIT_URL=${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}
-          BRANCH_NAME=${GITHUB_REF#refs/heads/}
-          
-          # Get file stats
-          FILES_CHANGED=$(git diff --name-only HEAD~1 HEAD 2>/dev/null | wc -l)
-          INSERTIONS=$(git diff --numstat HEAD~1 HEAD 2>/dev/null | awk '{sum+=$1} END {print sum}')
-          DELETIONS=$(git diff --numstat HEAD~1 HEAD 2>/dev/null | awk '{sum+=$2} END {print sum}')
-          
-          # Get changed files list (max 5)
-          CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD 2>/dev/null | head -5 | sed 's/^/• /')
-          
+          COMMIT_URL="${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}"
+          BRANCH_NAME="${GITHUB_REF#refs/heads/}"
+
+          FILES_CHANGED=$(git diff --name-only HEAD~1 HEAD 2>/dev/null | wc -l | tr -d ' ')
+          INSERTIONS=$(git diff --numstat HEAD~1 HEAD 2>/dev/null | awk '{sum+=$1} END {print sum+0}')
+          DELETIONS=$(git diff --numstat HEAD~1 HEAD 2>/dev/null | awk '{sum+=$2} END {print sum+0}')
+          CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD 2>/dev/null | head -5 | sed 's/^/• /' | tr '\n' '\n')
+
           echo "commit_sha=${COMMIT_SHA:0:7}" >> $GITHUB_OUTPUT
-          echo "commit_message=$(echo "$COMMIT_MESSAGE" | head -1)" >> $GITHUB_OUTPUT
+          echo "commit_message=$COMMIT_MESSAGE" >> $GITHUB_OUTPUT
           echo "commit_author=$COMMIT_AUTHOR" >> $GITHUB_OUTPUT
           echo "commit_url=$COMMIT_URL" >> $GITHUB_OUTPUT
           echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
           echo "files_changed=$FILES_CHANGED" >> $GITHUB_OUTPUT
-          echo "insertions=${INSERTIONS:-0}" >> $GITHUB_OUTPUT
-          echo "deletions=${DELETIONS:-0}" >> $GITHUB_OUTPUT
-          echo "changed_files<<EOF" >> $GITHUB_OUTPUT
-          echo "$CHANGED_FILES" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          echo "insertions=${INSERTIONS}" >> $GITHUB_OUTPUT
+          echo "deletions=${DELETIONS}" >> $GITHUB_OUTPUT
+          {
+            echo "changed_files<<EOF"
+            git diff --name-only HEAD~1 HEAD 2>/dev/null | head -5 | sed 's/^/• /'
+            echo "EOF"
+          } >> $GITHUB_OUTPUT
 
       - name: Send Discord notification
         run: |
           TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
-          PAYLOAD=$(cat <<EOF
-          {
-            "username": "GitHub Bot",
-            "avatar_url": "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png",
-            "embeds": [{
-              "title": "📝 New Commit Pushed",
-              "description": "${{ steps.commit_info.outputs.commit_message }}",
-              "url": "${{ steps.commit_info.outputs.commit_url }}",
-              "color": 3447003,
-              "fields": [
-                {
-                  "name": "🔗 Commit",
-                  "value": "[${{ steps.commit_info.outputs.commit_sha }}](${{ steps.commit_info.outputs.commit_url }})",
-                  "inline": true
-                },
-                {
-                  "name": "👤 Author",
-                  "value": "${{ steps.commit_info.outputs.commit_author }}",
-                  "inline": true
-                },
-                {
-                  "name": "🌿 Branch",
-                  "value": "`${{ steps.commit_info.outputs.branch_name }}`",
-                  "inline": true
-                },
-                {
-                  "name": "📊 Stats",
-                  "value": "**Files:** ${{ steps.commit_info.outputs.files_changed }} | **+${{ steps.commit_info.outputs.insertions }}** | **-${{ steps.commit_info.outputs.deletions }}**",
-                  "inline": false
-                },
-                {
-                  "name": "📄 Changed Files",
-                  "value": "${{ steps.commit_info.outputs.changed_files }}",
-                  "inline": false
-                }
-              ],
-              "timestamp": "${TIMESTAMP}"
-            }]
-          }
-          EOF
-          )
+          PAYLOAD=$(jq -n \
+            --arg msg "${{ steps.commit_info.outputs.commit_message }}" \
+            --arg url "${{ steps.commit_info.outputs.commit_url }}" \
+            --arg sha "${{ steps.commit_info.outputs.commit_sha }}" \
+            --arg author "${{ steps.commit_info.outputs.commit_author }}" \
+            --arg branch "${{ steps.commit_info.outputs.branch_name }}" \
+            --arg files "${{ steps.commit_info.outputs.files_changed }}" \
+            --arg ins "${{ steps.commit_info.outputs.insertions }}" \
+            --arg del "${{ steps.commit_info.outputs.deletions }}" \
+            --arg changed "${{ steps.commit_info.outputs.changed_files }}" \
+            --arg ts "$TIMESTAMP" \
+            '{
+              username: "GitHub Bot",
+              avatar_url: "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png",
+              embeds: [{
+                title: "📝 New Commit Pushed",
+                description: $msg,
+                url: $url,
+                color: 3447003,
+                fields: [
+                  { name: "🔗 Commit", value: ("[" + $sha + "](" + $url + ")"), inline: true },
+                  { name: "👤 Author", value: $author, inline: true },
+                  { name: "🌿 Branch", value: ("`" + $branch + "`"), inline: true },
+                  { name: "📊 Stats", value: ("**Files:** " + $files + " | **+" + $ins + "** | **-" + $del + "**"), inline: false },
+                  { name: "📄 Changed Files", value: (if $changed == "" then "N/A" else $changed end), inline: false }
+                ],
+                timestamp: $ts
+              }]
+            }')
 
-          # send and capture response
-          RESPONSE=$(curl -s -w "\n%{http_code}" -X POST -H 'Content-type: application/json' --data "$PAYLOAD" "${{ secrets.DISCORD_WEBHOOK_URL }}")
-          # split body and status
+          RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
+            -H 'Content-Type: application/json' \
+            --data "$PAYLOAD" \
+            "${{ secrets.DISCORD_WEBHOOK_URL }}")
+
           HTTP_STATUS=$(echo "$RESPONSE" | tail -n1)
           BODY=$(echo "$RESPONSE" | sed '$d')
 
           echo "Discord response status: $HTTP_STATUS"
           echo "Discord response body: $BODY"
+
           if [ "$HTTP_STATUS" -ne 204 ] && [ "$HTTP_STATUS" -ne 200 ]; then
             echo "Webhook failed with status $HTTP_STATUS" >&2
             exit 1
