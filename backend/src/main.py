@@ -2,7 +2,7 @@ from fastapi import FastAPI, BackgroundTasks, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from .core.config import settings
-from .agents.oracle import OracleAgent
+from .agents.main_agent.agent import MainAgent
 
 app = FastAPI(title=settings.PROJECT_NAME)
 
@@ -16,20 +16,23 @@ app.add_middleware(
 
 class AnalyzeRequest(BaseModel):
     repo_url: str
+    report_path: str = None # Allow optional document uploads
     enable_viva: bool = True
     enable_debug: bool = True
     generate_report: bool = False
 
-# Initialize Agents
-oracle_agent = OracleAgent()
+# Initialize the main orchestrator agent
+main_agent = MainAgent()
 
 @app.get("/")
 async def root():
     return {"message": "Welcome to ORACLE API", "status": "operational"}
+
 @app.post("/analyze")
 async def analyze_repo(request: AnalyzeRequest):
     # Legacy REST endpoint for backward compatibility
-    context = await oracle_agent.process("api_session", {"repo_url": request.repo_url})
+    input_data = {"repo_url": request.repo_url, "report_path": request.report_path}
+    context = await main_agent.process("api_session", input_data)
     try:
         data = context.model_dump()
     except AttributeError:
@@ -43,6 +46,7 @@ async def websocket_analyze(websocket: WebSocket):
         # Receive the initial request
         data = await websocket.receive_json()
         repo_url = data.get("repo_url")
+        report_path = data.get("report_path")
         
         if not repo_url:
             await websocket.send_json({"type": "log", "message": "[ERROR] Missing repo_url", "log_type": "error"})
@@ -53,8 +57,9 @@ async def websocket_analyze(websocket: WebSocket):
             # Send live logs to the UI terminal
             await websocket.send_json({"type": "log", **log_data})
 
-        # Run the agent with the live callback
-        context = await oracle_agent.process("ws_session", {"repo_url": repo_url}, log_callback=log_cb)
+        # Run the main agent with the live callback
+        input_payload = {"repo_url": repo_url, "report_path": report_path}
+        context = await main_agent.process("ws_session", input_payload, log_callback=log_cb)
         
         # Dump the final structured data
         try:

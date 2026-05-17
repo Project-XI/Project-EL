@@ -1,0 +1,76 @@
+name: Discord Agent Progress Notifier
+
+on:
+  repository_dispatch:
+    types: [agent-progress]
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Discord Notification
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          DISCORD_MENTION_USER_ID: ${{ secrets.DISCORD_MENTION_USER_ID }}
+        run: |
+          AGENT_NAME="${{ github.event.client_payload.agent }}"
+          STATUS="${{ github.event.client_payload.status }}"
+          MILESTONE="${{ github.event.client_payload.milestone }}"
+          SESSION_ID="${{ github.event.client_payload.session_id }}"
+          
+          if [ "$STATUS" == "complete" ]; then
+            EMBED_COLOR=3066993 # Green
+            STATUS_ICON=":white_check_mark:"
+          elif [ "$STATUS" == "failed" ]; then
+            EMBED_COLOR=15158332 # Red
+            STATUS_ICON=":x:"
+          else
+            EMBED_COLOR=15844367 # Yellow
+            STATUS_ICON=":hourglass_flowing_sand:"
+          fi
+          
+          # Mention user if ID is set
+          MENTION=""
+          if [ -n "$DISCORD_MENTION_USER_ID" ]; then
+            MENTION="<@$DISCORD_MENTION_USER_ID>"
+          fi
+
+          JSON_PAYLOAD=$(cat <<EOF
+          {
+            "content": "Oracle Pipeline Update $MENTION",
+            "embeds": [
+              {
+                "title": "Agent Progress Report",
+                "color": $EMBED_COLOR,
+                "fields": [
+                  {
+                    "name": "Agent",
+                    "value": "$AGENT_NAME",
+                    "inline": true
+                  },
+                  {
+                    "name": "Status",
+                    "value": "$STATUS_ICON $STATUS",
+                    "inline": true
+                  },
+                  {
+                    "name": "Milestone",
+                    "value": "$MILESTONE",
+                    "inline": false
+                  },
+                  {
+                    "name": "Session ID",
+                    "value": "\`$SESSION_ID\`",
+                    "inline": false
+                  }
+                ],
+                "footer": {
+                  "text": "Project-EL • $(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+                }
+              }
+            ]
+          }
+          EOF
+          )
+
+          curl -H "Content-Type: application/json" -d "$JSON_PAYLOAD" "$DISCORD_WEBHOOK_URL"

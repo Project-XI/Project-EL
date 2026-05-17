@@ -21,20 +21,21 @@ class EventType(str, Enum):
     REPO_CLONED = "repo_cloned"
     STRUCTURE_ANALYZED = "structure_analyzed"
     TECH_STACK_DETECTED = "tech_stack_detected"
-    PROJECT_GRAPH_BUILT = "project_graph_built"
+    PROJECT_GRAPH_BUILT = "project_graph.built"
     CONTEXT_SYNTHESIZED = "context_synthesized"
-    CONTEXT_READY = "context_ready"
+    CONTEXT_READY = "context.ready"
+    AGENT_PROGRESS = "agent.progress"
     
     # Implementation Intelligence Events
-    IMPLEMENTATION_FLOW_DETECTED = "implementation_flow_detected"
-    AUTH_FLOW_INFERRED = "auth_flow_inferred"
+    IMPLEMENTATION_FLOW_DETECTED = "implementation_flow.detected"
+    AUTH_FLOW_INFERRED = "auth_flow.inferred"
     API_LIFECYCLE_MAPPED = "api_lifecycle_mapped"
-    MIDDLEWARE_CHAIN_ANALYZED = "middleware_chain_analyzed"
+    MIDDLEWARE_CHAIN_ANALYZED = "middleware_chain.analyzed"
     DB_INTERACTION_DETECTED = "db_interaction_detected"
-    SECURITY_RISK_FLAGGED = "security_risk_flagged"
-    FAILURE_PATH_DETECTED = "failure_path_detected"
-    DEAD_PATH_DETECTED = "dead_path_detected"
-    EXCEPTION_FLOW_ANALYZED = "exception_flow_analyzed"
+    SECURITY_RISK_FLAGGED = "security_risk.flagged"
+    FAILURE_PATH_DETECTED = "failure_path.detected"
+    DEAD_PATH_DETECTED = "dead_path.detected"
+    EXCEPTION_FLOW_ANALYZED = "exception_flow.analyzed"
 
 class PlatformEvent(BaseModel):
     event_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
