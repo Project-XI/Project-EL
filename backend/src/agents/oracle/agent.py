@@ -18,12 +18,9 @@ from src.services.intelligence.architecture_inference_engine import Architecture
 from src.services.intelligence.reasoning_inference_engine import ReasoningInferenceEngine
 from src.services.intelligence.viva_intelligence_engine import VivaIntelligenceEngine
 # NEW: Context-aware reasoning engines
-from src.services.intelligence.context_enrichment_engine import ContextEnrichmentEngine
-from src.services.intelligence.implementation_quality_analyzer import ImplementationQualityAnalyzer
-from src.services.intelligence.failure_path_intelligence_engine import FailurePathIntelligenceEngine
-from src.services.intelligence.context_aware_tradeoff_engine import ContextAwareTradeoffEngine
-from src.services.intelligence.senior_engineer_viva_generator import SeniorEngineerVivaGenerator
-from src.services.intelligence.architecture_quality_scorer import ArchitectureQualityScorer
+from src.services.intelligence.observable_signals_engine import ObservableSignalsEngine
+from src.services.intelligence.execution_graph_failure_analyzer import ExecutionGraphFailureAnalyzer
+from src.services.intelligence.evidence_grounded_viva_generator import EvidenceGroundedVivaGenerator
 
 class OracleAgent(BaseAgent):
     def __init__(self):
@@ -102,97 +99,64 @@ class OracleAgent(BaseAgent):
                 self.log_info(f"Repository analysis failed gracefully: {str(e)}")
                 repo_path = None
 
-        # ===== NEW: Context Enrichment Layer =====
-        await send_log("[Oracle] Enriching analysis context...", "info")
-        context_enrichment = {}
+
+        # ===== PHASE 2: Observable Signals Extraction =====
+        observable_signals = []
+        await send_log("[Oracle] Extracting observable engineering signals...", "info")
         if repo_path:
-            context_enrichment = ContextEnrichmentEngine.enrich_context(repo_path, repo_structure)
-            self.emit_event(session_id, "CONTEXT_ENRICHED", {
-                "project_purpose": context_enrichment.get("project_purpose", {}).get("value", "Unknown"),
-                "operational_env": context_enrichment.get("operational_environment", {}).get("value", "Unknown"),
-                "infrastructure_maturity": context_enrichment.get("infrastructure_maturity", {}).get("value", "Unknown"),
+            observable_signals = ObservableSignalsEngine.extract_signals(repo_path, repo_structure, repo_detections, project_graph)
+            self.emit_event(session_id, "OBSERVABLE_SIGNALS_EXTRACTED", {
+                "signal_count": len(observable_signals),
+                "critical_signals": len([s for s in observable_signals if s.risk_level == "high"]),
             })
 
-        # ===== NEW: Implementation Quality Analysis =====
-        await send_log("[Oracle] Analyzing implementation quality...", "info")
-        quality_analysis = {}
-        if repo_path:
-            quality_analysis = ImplementationQualityAnalyzer.analyze_implementation_quality(repo_path, repo_structure)
-            self.emit_event(session_id, "QUALITY_ANALYSIS_COMPLETE", {
-                "dimensions_analyzed": len(quality_analysis),
-                "top_strength": max(quality_analysis.items(), key=lambda x: x[1].confidence, default=("N/A", EvidenceModel(value="", confidence=0, evidence=[])))[0],
-            })
-
-        # ===== NEW: Architecture Inference & Old Logic =====
-        await send_log("[Oracle] Running explainability engine...", "info")
+        # ===== Architecture Inference (AST-based, deterministic) =====
+        await send_log("[Oracle] Building architecture model from AST...", "info")
         arch_inference = ArchitectureInferenceEngine.infer_architecture(project_graph, repo_detections)
         
-        # Old template-based reasoning (kept for backward compatibility)
+        # Template-based reasoning (preserved for backward compatibility)
         template_reasoning = ReasoningInferenceEngine.infer_reasoning(repo_detections)
         template_tradeoffs = ReasoningInferenceEngine.infer_tradeoffs(repo_detections)
 
-        # ===== NEW: Context-Aware Tradeoff Reasoning =====
-        await send_log("[Oracle] Generating context-aware tradeoff analysis...", "info")
-        context_aware_reasoning = []
-        context_aware_tradeoffs = []
-        if repo_path and context_enrichment:
-            # First, analyze failures to inform tradeoff reasoning
-            failure_analysis = FailurePathIntelligenceEngine.analyze_failure_paths(
-                repo_path, repo_detections, quality_analysis, context_enrichment
-            )
-            self.emit_event(session_id, "FAILURE_PATHS_ANALYZED", {
-                "scenarios_analyzed": len(failure_analysis),
-            })
-            
-            # Generate context-aware reasoning
-            context_aware_reasoning = ContextAwareTradeoffEngine.generate_context_aware_reasoning(
-                repo_detections, quality_analysis, context_enrichment, failure_analysis
-            )
-            
-            # Generate context-aware tradeoffs
-            context_aware_tradeoffs = ContextAwareTradeoffEngine.generate_tradeoff_analysis(
-                repo_detections, quality_analysis, context_enrichment, failure_analysis
-            )
-        else:
-            failure_analysis = {}
 
-        # ===== NEW: Senior Engineer Viva Generation =====
-        await send_log("[Oracle] Generating senior-engineer viva targets...", "info")
-        senior_viva_targets = []
-        if repo_path and context_enrichment and quality_analysis:
-            senior_viva_targets = SeniorEngineerVivaGenerator.generate_viva_targets(
-                repo_detections,
-                quality_analysis,
-                context_enrichment,
-                failure_analysis,
-                context_aware_tradeoffs
+
+
+        # ===== PHASE 2: Failure Scenario Analysis =====
+        failure_scenarios = []
+        await send_log("[Oracle] Analyzing failure scenarios through execution graph...", "info")
+        if repo_path and observable_signals:
+            failure_scenarios = ExecutionGraphFailureAnalyzer.analyze_failure_scenarios(
+                repo_path, repo_structure, repo_detections, observable_signals, project_graph
             )
-            self.emit_event(session_id, "SENIOR_VIVA_GENERATED", {
-                "viva_target_count": len(senior_viva_targets),
+            self.emit_event(session_id, "FAILURE_SCENARIOS_ANALYZED", {
+                "scenario_count": len(failure_scenarios),
+                "critical_scenarios": len([s for s in failure_scenarios if s.propagation_risk == "critical"]),
             })
 
-        # ===== NEW: Architecture Quality Scoring =====
-        await send_log("[Oracle] Scoring architecture quality...", "info")
-        quality_score = {}
-        if repo_path and quality_analysis and context_enrichment:
-            quality_score = ArchitectureQualityScorer.score_architecture_quality(
-                quality_analysis,
-                context_enrichment,
-                failure_analysis,
-                repo_detections
+        # ===== PHASE 2: Evidence-Grounded Viva Generation =====
+        grounded_viva_targets = []
+        await send_log("[Oracle] Generating code-grounded viva questions...", "info")
+        if failure_scenarios and observable_signals:
+            grounded_viva_targets = EvidenceGroundedVivaGenerator.generate_questions(
+                failure_scenarios, observable_signals, repo_detections, repo_path
             )
-            self.emit_event(session_id, "QUALITY_SCORE_COMPUTED", {
-                "overall_score": quality_score.get("overall_score", 0),
-                "overall_grade": quality_score.get("overall_grade", "Unknown"),
+            self.emit_event(session_id, "EVIDENCE_GROUNDED_VIVA_GENERATED", {
+                "viva_count": len(grounded_viva_targets),
+                "difficulty_breakdown": f"hard: {len([v for v in grounded_viva_targets if v.difficulty == 'hard'])}, "
+                                       f"medium: {len([v for v in grounded_viva_targets if v.difficulty == 'medium'])}, "
+                                       f"foundational: {len([v for v in grounded_viva_targets if v.difficulty == 'foundational'])}",
             })
 
-        # Old viva generation (kept for backward compatibility)
+        # Fallback viva generation (backward compatibility)
         await send_log("[Oracle] Generating viva intelligence...", "info")
         viva_targets = VivaIntelligenceEngine.generate_targets(repo_detections, arch_inference)
         inconsistencies = VivaIntelligenceEngine.detect_inconsistencies(doc_text, repo_detections)
         complexity_mismatch = VivaIntelligenceEngine.detect_complexity_mismatch(arch_inference, repo_detections)
 
         # 4. Final Context Assembly
+        # Use evidence-grounded viva if available, else fallback to template-based
+        final_viva_targets = grounded_viva_targets if grounded_viva_targets else viva_targets
+        
         context = StructuredContext(
             project_name=EvidenceModel(value="Project TWELVE", confidence=0.9, evidence=["Inferred from repo/docs"]),
             project_type=EvidenceModel(value="Intelligence System", confidence=0.8, evidence=["Technical analysis patterns"]),
@@ -202,18 +166,16 @@ class OracleAgent(BaseAgent):
             authentication_system=repo_detections.get("authentication_system", EvidenceModel(value="Unknown", confidence=0.0, evidence=[])),
             architecture_pattern=arch_inference,
             project_graph=project_graph,
-            implementation_reasoning=context_aware_reasoning if context_aware_reasoning else template_reasoning,
-            tradeoff_analysis=context_aware_tradeoffs if context_aware_tradeoffs else template_tradeoffs,
-            viva_intelligence_targets=senior_viva_targets if senior_viva_targets else viva_targets,
+            implementation_reasoning=template_reasoning,
+            tradeoff_analysis=template_tradeoffs,
+            viva_intelligence_targets=final_viva_targets,
             inconsistencies=inconsistencies,
             complexity_mismatch=complexity_mismatch
         )
         
-        # Attach quality analysis and score to context
-        context.quality_analysis = quality_analysis
-        context.quality_score = quality_score
-        context.context_enrichment = context_enrichment
-        context.failure_analysis = failure_analysis
+        # Attach Phase 2 evidence-grounded analysis to context
+        context.observable_signals = observable_signals
+        context.failure_scenarios = failure_scenarios
 
         # 5. Implementation Intelligence Phase
         if repo_url and repo_path:
