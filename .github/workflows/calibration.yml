@@ -1,0 +1,200 @@
+name: ORACLE Calibration & Validation Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'backend/src/services/intelligence/**'
+      - 'backend/src/agents/oracle/**'
+      - 'backend/evaluation/calibration/**'
+      - '.github/workflows/calibration.yml'
+  
+  pull_request:
+    branches: [main]
+    paths:
+      - 'backend/src/services/intelligence/**'
+      - 'backend/src/agents/oracle/**'
+
+jobs:
+  calibration:
+    name: ORACLE Calibration & Validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+      
+      - name: Install dependencies
+        working-directory: ./backend
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-asyncio
+      
+      - name: Run ORACLE calibration pipeline
+        working-directory: ./backend
+        run: |
+          python -m evaluation.calibration.calibration_runner
+      
+      - name: Run validation against fixtures
+        working-directory: ./backend
+        run: |
+          python evaluation/validate_oracle_analysis.py
+      
+      - name: Check calibration thresholds
+        working-directory: ./backend
+        id: check_thresholds
+        run: |
+          python evaluation/check_calibration_thresholds.py \
+            --results-dir evaluation/calibration/results
+        continue-on-error: true
+      
+      - name: Strict threshold check (main branch only)
+        working-directory: ./backend
+        if: github.ref == 'refs/heads/main'
+        run: |
+          python evaluation/check_calibration_thresholds.py \
+            --strict \
+            --results-dir evaluation/calibration/results
+      
+      - name: Upload calibration results
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: oracle-calibration-results
+          path: backend/evaluation/calibration/results/
+          retention-days: 30
+      
+      - name: Upload validation results
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: oracle-validation-results
+          path: backend/evaluation/calibration/validation_results/
+          retention-days: 30
+      
+      - name: Create PR comment with results
+        if: github.event_name == 'pull_request' && always()
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            
+            // Find latest calibration report
+            const resultsDir = './backend/evaluation/calibration/results';
+            const files = fs.readdirSync(resultsDir)
+              .filter(f => f.startsWith('calibration_report_'))
+              .sort()
+              .reverse();
+            
+            if (files.length === 0) {
+              console.log('No calibration report found');
+              return;
+            }
+            
+            const latest = JSON.parse(
+              fs.readFileSync(path.join(resultsDir, files[0]))
+            );
+            
+            const metrics = latest.aggregate_metrics;
+            const comment = `## 🔬 ORACLE Calibration Results
+            
+            ### Signals
+            - Precision: \`${metrics.signals.average_precision.toFixed(3)}\`
+            - Recall: \`${metrics.signals.average_recall.toFixed(3)}\`
+            - F1: \`${metrics.signals.average_f1_score.toFixed(3)}\`
+            
+            ### Failure Propagation
+            - Precision: \`${metrics.failures.average_precision.toFixed(3)}\`
+            - Propagation Accuracy: \`${metrics.failures.average_propagation_accuracy.toFixed(3)}\`
+            
+            ### Viva Questions
+            - Validity Rate: \`${metrics.viva.average_validity_rate.toFixed(3)}\`
+            - Grounding Rate: \`${metrics.viva.average_grounding_rate.toFixed(3)}\`
+            
+            ${latest.calibration_recommendations.map(r => \`- \${r}\`).join('\n')}
+            `;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+      
+      - name: Report failure
+        if: failure() && github.ref == 'refs/heads/main'
+        run: |
+          echo "❌ Calibration pipeline failed on main branch"
+          echo "Review calibration results and fix issues before merging"
+          exit 1
+
+  # Optional: Publish calibration dashboard
+  publish-dashboard:
+    name: Publish Calibration Dashboard
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    needs: calibration
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Download calibration artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: oracle-calibration-results
+          path: calibration-results
+      
+      - name: Update dashboard data
+        run: |
+          # In production, would push calibration data to dashboard
+          # For now, just verify dashboard exists
+          test -f backend/testing_oracle_ui/calibration_dashboard.html
+      
+      - name: Deploy dashboard (optional)
+        # This would deploy to GitHub Pages or your dashboard server
+        # run: |
+        #   # Deploy logic here
+        run: |
+          echo "Dashboard deployment would happen here"
+
+  # Optional: Update benchmarks and trends
+  update-benchmarks:
+    name: Update Calibration Benchmarks
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    needs: calibration
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Download calibration results
+        uses: actions/download-artifact@v3
+        with:
+          name: oracle-calibration-results
+      
+      - name: Update benchmarks
+        run: |
+          # In production, would:
+          # 1. Read latest calibration report
+          # 2. Update benchmarks file with new metrics
+          # 3. Commit and push benchmarks
+          echo "Benchmark update would happen here"
+      
+      - name: Track trends
+        run: |
+          # In production, would:
+          # 1. Aggregate metrics over time
+          # 2. Detect degradation trends
+          # 3. Alert if metrics decline
+          echo "Trend tracking would happen here"
