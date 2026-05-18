@@ -79,10 +79,13 @@ class FairnessAuditIssue:
 class FairnessAuditReport:
     """Comprehensive fairness audit of an assessment."""
     
+    # Required fields
     audit_id: str
     assessment_id: str
     timestamp: datetime
+    original_familiarity_score: float
     
+    # Optional fields with defaults
     # Issues found
     critical_issues: List[FairnessAuditIssue] = field(default_factory=list)
     high_priority_issues: List[FairnessAuditIssue] = field(default_factory=list)
@@ -93,7 +96,6 @@ class FairnessAuditReport:
     demographic_context: List[DemographicContext] = field(default_factory=list)
     
     # Scores after bias correction
-    original_familiarity_score: float  # Original score
     bias_adjusted_familiarity_score: Optional[float] = None  # After corrections
     confidence_reduced_to: Optional[str] = None  # e.g., "MEDIUM" if was "HIGH"
     
@@ -159,9 +161,9 @@ class FairnessAuditor:
             audit_id=audit_id,
             assessment_id=assessment_id,
             timestamp=datetime.now(),
+            original_familiarity_score=familiarity_score,
             demographic_context=demographic_context or [],
         )
-        report.original_familiarity_score = familiarity_score
         
         # Check 1: Overconfidence Detection
         self._check_overconfidence(report, familiarity_score, confidence, indicators_found)
