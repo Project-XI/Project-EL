@@ -1,0 +1,1653 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ORACLE Workbench | Validation Lab</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/svg-pan-zoom@3.6.1/dist/svg-pan-zoom.min.js"></script>
+    <style>
+        :root {
+            --bg: #F5F2EE;
+            --bg-alt: #EDEAE5;
+            --bg-white: #FAFAF8;
+            --highlight: #E8E3DC;
+            --text-primary: #1C1A17;
+            --text-secondary: #4A4740;
+            --text-muted: #8A8580;
+            --accent: #2B2825;
+            --rule: #D4D0CA;
+            
+            --font-serif: 'Cormorant Garamond', serif;
+            --font-sans: 'DM Sans', sans-serif;
+            --font-mono: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-sans);
+            background-color: var(--bg);
+            color: var(--text-primary);
+            line-height: 1.6;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+            font-size: 14px;
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            font-family: var(--font-serif);
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        /* --- Layout --- */
+        .sidebar {
+            width: 260px;
+            background-color: var(--bg-white);
+            border-right: 1px solid var(--rule);
+            display: flex;
+            flex-direction: column;
+            padding: 24px 0;
+            flex-shrink: 0;
+        }
+
+        .workspace {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            background-color: var(--bg);
+        }
+
+        .details-panel {
+            width: 340px;
+            background-color: var(--bg-white);
+            border-left: 1px solid var(--rule);
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+            overflow-y: auto;
+        }
+
+        /* --- Sidebar --- */
+        .logo {
+            font-family: var(--font-serif);
+            font-size: 24px;
+            font-weight: 600;
+            padding: 0 24px 24px;
+            border-bottom: 1px solid var(--rule);
+            margin-bottom: 16px;
+            letter-spacing: 1px;
+            color: var(--accent);
+        }
+
+        .nav-group {
+            margin-bottom: 24px;
+        }
+
+        .nav-title {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--text-muted);
+            padding: 0 24px;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: 10px 24px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: all 0.2s ease;
+            gap: 12px;
+            cursor: pointer;
+        }
+
+        .nav-item:hover, .nav-item.active {
+            background-color: var(--highlight);
+            color: var(--text-primary);
+        }
+
+        .nav-item.active {
+            border-right: 3px solid var(--accent);
+        }
+
+        .nav-item i { width: 16px; height: 16px; }
+
+        .sidebar-footer {
+            margin-top: auto;
+            padding: 24px;
+            border-top: 1px solid var(--rule);
+        }
+
+        /* --- Workspace --- */
+        .dashboard {
+            padding: 40px;
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .page-header {
+            margin-bottom: 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+        }
+
+        .page-header h1 {
+            font-size: 36px;
+            margin-bottom: 8px;
+            font-weight: 400;
+        }
+
+        .page-header p {
+            color: var(--text-secondary);
+            font-size: 15px;
+        }
+
+        /* Input Area */
+        .input-section {
+            background-color: var(--bg-white);
+            border: 1px solid var(--rule);
+            padding: 32px;
+            margin-bottom: 40px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 32px;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .input-label {
+            font-family: var(--font-serif);
+            font-size: 18px;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .text-input {
+            background-color: var(--bg);
+            border: 1px solid var(--rule);
+            padding: 12px 16px;
+            font-family: var(--font-mono);
+            font-size: 13px;
+            color: var(--text-primary);
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .text-input:focus { border-color: var(--text-secondary); }
+
+        .file-drop {
+            background-color: var(--bg);
+            border: 1px dashed var(--rule);
+            padding: 24px;
+            text-align: center;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .file-drop:hover {
+            border-color: var(--text-secondary);
+            background-color: var(--highlight);
+            color: var(--text-primary);
+        }
+
+        .btn {
+            background: none;
+            border: 1px solid var(--rule);
+            padding: 10px 24px;
+            font-family: var(--font-sans);
+            font-size: 13px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+        }
+
+        .btn:hover {
+            background-color: var(--highlight);
+            color: var(--text-primary);
+        }
+
+        .btn-primary {
+            background-color: var(--accent);
+            color: var(--bg-white);
+            border-color: var(--accent);
+        }
+
+        .btn-primary:hover {
+            background-color: var(--text-primary);
+            color: var(--bg-white);
+        }
+
+        .analyze-actions {
+            grid-column: 1 / -1;
+            display: flex;
+            justify-content: flex-end;
+            border-top: 1px solid var(--rule);
+            padding-top: 24px;
+            margin-top: 8px;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid var(--rule);
+            margin-bottom: 32px;
+            gap: 32px;
+        }
+
+        .tab {
+            padding: 12px 0;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            position: relative;
+            transition: color 0.2s;
+        }
+
+        .tab:hover { color: var(--text-secondary); }
+        .tab.active { color: var(--text-primary); }
+
+        .tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background-color: var(--accent);
+        }
+
+        /* Summary Cards */
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 24px;
+            margin-bottom: 40px;
+        }
+
+        .card {
+            background-color: var(--bg-white);
+            border: 1px solid var(--rule);
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+
+        .card-value {
+            font-family: var(--font-serif);
+            font-size: 28px;
+            color: var(--text-primary);
+        }
+
+        .card-meta {
+            font-size: 12px;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #D4D0CA;
+        }
+        .status-dot.active { background-color: #5B7B7A; } 
+        .status-dot.warn { background-color: #A67B5B; } 
+        .status-dot.err { background-color: #8C3A3A; }
+
+        /* Main Panels */
+        .panel-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 24px;
+            margin-bottom: 40px;
+        }
+
+        .panel {
+            background-color: var(--bg-white);
+            border: 1px solid var(--rule);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-header {
+            padding: 16px 24px;
+            border-bottom: 1px solid var(--rule);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: var(--bg-alt);
+        }
+
+        .panel-title {
+            font-family: var(--font-serif);
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .panel-content {
+            padding: 24px;
+            flex-grow: 1;
+        }
+        
+        .panel.fullscreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 1000;
+            background-color: var(--bg-white);
+            margin: 0;
+            border: none;
+            display: flex;
+            flex-direction: column;
+        }
+        .panel.fullscreen .graph-area {
+            height: 100%;
+            flex-grow: 1;
+            margin-bottom: 0;
+        }
+        .panel.fullscreen .panel-content {
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+            height: calc(100vh - 60px);
+        }
+
+        /* Graph Explorer */
+        .graph-area {
+            height: 320px;
+            background-color: var(--bg);
+            border: 1px solid var(--rule);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            font-family: var(--font-mono);
+            font-size: 12px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .graph-mock {
+            width: 100%;
+            height: 100%;
+            background-image: radial-gradient(var(--rule) 1px, transparent 1px);
+            background-size: 20px 20px;
+            opacity: 0.5;
+            position: absolute;
+        }
+
+        .node-mock {
+            position: absolute;
+            background: var(--bg-white);
+            border: 1px solid var(--accent);
+            padding: 8px 16px;
+            font-family: var(--font-mono);
+            font-size: 11px;
+            box-shadow: 2px 2px 0 var(--highlight);
+            cursor: pointer;
+            z-index: 2;
+        }
+        .node-mock.n1 { top: 40px; left: 40px; }
+        .node-mock.n2 { top: 120px; left: 160px; }
+        .node-mock.n3 { top: 200px; left: 280px; }
+        .node-mock.active { background: var(--highlight); border-color: var(--text-primary); }
+
+        /* Viva Panel */
+        .viva-list {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .viva-item {
+            border-left: 2px solid var(--rule);
+            padding-left: 16px;
+        }
+
+        .viva-topic {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+            display: flex;
+            justify-content: space-between;
+            font-weight: 600;
+        }
+
+        .viva-q {
+            font-family: var(--font-serif);
+            font-size: 18px;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+            line-height: 1.4;
+        }
+
+        .viva-meta {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .tag {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 8px;
+            border: 1px solid var(--rule);
+            font-size: 10px;
+            color: var(--text-secondary);
+            border-radius: 12px;
+            letter-spacing: 0.5px;
+        }
+        .tag.hard { border-color: #A67B5B; color: #A67B5B; }
+        .tag.pass { border-color: #5B7B7A; color: #5B7B7A; }
+        
+        /* Viva Intelligence Cards */
+        .viva-card {
+            border: 1px solid var(--rule);
+            background: var(--bg-white);
+            padding: 20px 24px;
+            margin-bottom: 16px;
+            cursor: pointer;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            position: relative;
+        }
+        .viva-card:hover {
+            border-color: var(--text-secondary);
+            box-shadow: 0 2px 12px rgba(44,40,37,0.06);
+        }
+        .viva-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+            gap: 16px;
+        }
+        .viva-card-meta {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-shrink: 0;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+        .viva-category-badge {
+            font-size: 10px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            font-weight: 600;
+            padding: 3px 10px;
+            border-radius: 12px;
+            border: 1px solid;
+        }
+        .viva-cat-architecture { border-color: #2B2825; color: #2B2825; }
+        .viva-cat-tradeoff     { border-color: #7B6B52; color: #7B6B52; }
+        .viva-cat-security     { border-color: #8C3A3A; color: #8C3A3A; }
+        .viva-cat-scalability  { border-color: #3A6B5B; color: #3A6B5B; }
+        .viva-cat-failure-path { border-color: #7B4A22; color: #7B4A22; }
+        .viva-cat-runtime      { border-color: #4A5B7B; color: #4A5B7B; }
+        .viva-question {
+            font-family: var(--font-serif);
+            font-size: 19px;
+            line-height: 1.4;
+            color: var(--text-primary);
+            margin-bottom: 14px;
+        }
+        .depth-bar-wrap {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .depth-label { font-size: 11px; color: var(--text-muted); width: 80px; flex-shrink:0; }
+        .depth-bar-outer {
+            flex-grow: 1;
+            height: 3px;
+            background: var(--rule);
+        }
+        .depth-bar-fill {
+            height: 100%;
+            background: var(--accent);
+            transition: width 0.6s ease;
+        }
+        .depth-score-num {
+            font-family: var(--font-mono);
+            font-size: 12px;
+            color: var(--text-primary);
+            flex-shrink: 0;
+            width: 28px;
+            text-align: right;
+        }
+        .viva-reasoning {
+            background: var(--bg);
+            border-left: 2px solid var(--accent);
+            padding: 10px 14px;
+            font-style: italic;
+            font-family: var(--font-serif);
+            font-size: 15px;
+            color: var(--text-secondary);
+            line-height: 1.5;
+            margin-top: 8px;
+            display: none;
+        }
+        .viva-reasoning.open { display: block; }
+        .viva-expand-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 12px;
+            color: var(--text-muted);
+            font-family: var(--font-sans);
+            padding: 0;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            margin-top: 4px;
+            transition: color 0.2s;
+        }
+        .viva-expand-btn:hover { color: var(--text-primary); }
+        .viva-related-node {
+            font-family: var(--font-mono);
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 8px;
+        }
+        .viva-filters {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+        .viva-filter-btn {
+            background: var(--bg-white);
+            border: 1px solid var(--rule);
+            padding: 5px 14px;
+            font-size: 11px;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+            font-weight: 600;
+            cursor: pointer;
+            color: var(--text-muted);
+            transition: all 0.15s;
+            font-family: var(--font-sans);
+        }
+        .viva-filter-btn.active, .viva-filter-btn:hover {
+            background: var(--accent);
+            color: var(--bg-white);
+            border-color: var(--accent);
+        }
+        .viva-search-input {
+            width: 100%;
+            background: var(--bg);
+            border: 1px solid var(--rule);
+            padding: 10px 14px;
+            font-family: var(--font-mono);
+            font-size: 13px;
+            color: var(--text-primary);
+            outline: none;
+            margin-bottom: 16px;
+            transition: border-color 0.2s;
+        }
+        .viva-search-input:focus { border-color: var(--text-secondary); }
+        .viva-empty {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        /* Benchmark Table */
+        .table-wrapper {
+            border: 1px solid var(--rule);
+            background-color: var(--bg-white);
+            margin-bottom: 40px;
+        }
+
+        .table-empty {
+            padding: 20px 24px;
+            color: var(--text-muted);
+            border-top: 1px solid var(--rule);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 13px;
+        }
+
+        th, td {
+            padding: 16px 24px;
+            border-bottom: 1px solid var(--rule);
+        }
+
+        th {
+            font-family: var(--font-serif);
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            background-color: var(--bg-alt);
+        }
+
+        tr:last-child td { border-bottom: none; }
+        td.mono { font-family: var(--font-mono); color: var(--text-secondary); font-size: 12px; }
+
+        /* Terminal */
+        .terminal-panel {
+            background-color: var(--accent);
+            color: #E8E3DC;
+            font-family: var(--font-mono);
+            font-size: 12px;
+            border-radius: 0;
+            overflow: hidden;
+            border: none;
+        }
+
+        .terminal-header {
+            background-color: #1C1A17;
+            padding: 8px 16px;
+            display: flex;
+            gap: 8px;
+            border-bottom: 1px solid #333;
+        }
+
+        .term-dot { width: 10px; height: 10px; border-radius: 50%; background: #4A4740; }
+
+        .terminal-body {
+            padding: 16px;
+            height: 200px;
+            overflow-y: auto;
+            line-height: 1.6;
+        }
+
+        .log-line { margin-bottom: 4px; display: flex; gap: 12px; }
+        .log-time { color: #8A8580; flex-shrink: 0; }
+        .log-msg { flex-grow: 1; }
+        .log-info { color: #5B7B7A; }
+        .log-warn { color: #A67B5B; }
+        .log-success { color: #D4D0CA; }
+
+        /* --- Explainability Inspector (Right Panel) --- */
+        .details-header {
+            padding: 24px;
+            border-bottom: 1px solid var(--rule);
+            background-color: var(--bg);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .details-title {
+            font-family: var(--font-serif);
+            font-size: 22px;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .details-subtitle {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .inspector-content {
+            padding: 24px;
+        }
+
+        .inspector-section {
+            margin-bottom: 32px;
+        }
+
+        .inspector-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+            font-weight: 600;
+            border-bottom: 1px solid var(--rule);
+            padding-bottom: 4px;
+        }
+
+        .target-node {
+            font-family: var(--font-mono);
+            font-size: 13px;
+            color: var(--accent);
+            background-color: var(--bg);
+            border: 1px solid var(--rule);
+            padding: 12px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .evidence-card {
+            background-color: var(--bg);
+            border: 1px solid var(--rule);
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+
+        .evidence-loc {
+            font-family: var(--font-mono);
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .code-snippet {
+            background-color: var(--bg-white);
+            border: 1px solid var(--rule);
+            padding: 16px;
+            font-family: var(--font-mono);
+            font-size: 12px;
+            color: var(--text-secondary);
+            overflow-x: auto;
+            margin-bottom: 12px;
+            line-height: 1.5;
+        }
+
+        .code-snippet .highlight {
+            background-color: var(--highlight);
+            color: var(--text-primary);
+            border-left: 2px solid var(--accent);
+            padding-left: 8px;
+            margin-left: -10px;
+        }
+
+        .reasoning-text {
+            font-family: var(--font-serif);
+            font-size: 16px;
+            color: var(--text-primary);
+            font-style: italic;
+            line-height: 1.6;
+            padding-left: 16px;
+            border-left: 2px solid var(--accent);
+            margin-bottom: 16px;
+        }
+
+        .confidence-meter {
+            margin-top: 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .meter-bar {
+            flex-grow: 1;
+            height: 4px;
+            background-color: var(--rule);
+            position: relative;
+        }
+
+        .meter-fill {
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            background-color: var(--accent);
+            width: 95%;
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- Left Sidebar -->
+    <aside class="sidebar">
+        <div class="logo">ORACLE.</div>
+        
+        <div class="nav-group">
+            <div class="nav-title">Validation Lab</div>
+            <a href="#analysis-dashboard" class="nav-item active" data-scroll-target="analysis-dashboard"><i data-lucide="flask-conical"></i> Analysis Hub</a>
+            <a href="#execution-graphs" class="nav-item" data-scroll-target="execution-graphs"><i data-lucide="git-merge"></i> Flow Inspector</a>
+            <a href="#viva-intelligence" class="nav-item" data-scroll-target="viva-intelligence"><i data-lucide="brain-circuit"></i> Viva Intelligence</a>
+        </div>
+
+        <div class="nav-group">
+            <div class="nav-title">Diagnostics</div>
+            <a href="#benchmarks" class="nav-item" data-scroll-target="benchmarks"><i data-lucide="bar-chart"></i> Benchmarks</a>
+            <a href="#explainability" class="nav-item" data-scroll-target="explainability"><i data-lucide="scan-search"></i> Explainability</a>
+            <a href="#anomalies" class="nav-item" data-scroll-target="anomalies"><i data-lucide="shield-alert"></i> Anomalies</a>
+        </div>
+
+        <div class="nav-group">
+            <div class="nav-title">System</div>
+            <a href="#agent-output" class="nav-item" data-scroll-target="agent-output"><i data-lucide="terminal"></i> Agent Output</a>
+            <a href="#engine-config" class="nav-item" data-scroll-target="engine-config"><i data-lucide="settings"></i> Engine Config</a>
+        </div>
+
+        <div class="sidebar-footer">
+            <div class="card-meta" style="justify-content: center;">
+                <div class="status-dot active"></div> Testing Engine Online
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Workspace -->
+    <main class="workspace">
+        <div class="dashboard">
+            <div class="page-header">
+                <div>
+                    <h1>Engineering Intelligence Validation</h1>
+                    <p>Testing laboratory for the ORACLE repository analysis agent.</p>
+                </div>
+            </div>
+
+            <!-- Input Section -->
+            <div class="input-section" id="analysis-controls">
+                <div class="input-group">
+                    <div class="input-label"><i data-lucide="github"></i> Repository URL</div>
+                    <input type="text" id="repo_url" class="text-input" placeholder="e.g. https://github.com/Project-XI/Project-EL" value="https://github.com/Project-XI/Project-EL">
+                    <p style="font-size: 12px; color: var(--text-muted); font-style: italic;">Remote AST parsing and structure detection.</p>
+                </div>
+                
+                <div class="input-group">
+                    <div class="input-label"><i data-lucide="folder-up"></i> Local Project Upload</div>
+                    <div class="file-drop">
+                        <i data-lucide="upload-cloud" style="width: 24px; height: 24px; color: var(--text-secondary);"></i>
+                        <div>Drag and drop directory or .zip</div>
+                        <div style="font-size: 11px;">Max size: 50MB (skips node_modules)</div>
+                    </div>
+                </div>
+
+                <div class="input-group" id="engine-config">
+                    <div class="input-label"><i data-lucide="settings"></i> Engine Config</div>
+                    <div style="background: var(--bg); border: 1px solid var(--rule); padding: 16px; display: grid; gap: 10px; font-size: 13px; color: var(--text-secondary);">
+                        <div><strong>Mode:</strong> Live WebSocket analysis + benchmark overlay</div>
+                        <div><strong>Backend:</strong> ws://localhost:8001/ws/analyze</div>
+                        <div><strong>Signals:</strong> AST evidence, execution graph, viva questions, anomalies</div>
+                        <div><strong>Fallback:</strong> Pending states appear until analysis completes</div>
+                    </div>
+                </div>
+
+                <div class="analyze-actions">
+                    <button id="analyze_btn" class="btn btn-primary" onclick="analyzeRepo()"><i data-lucide="cpu"></i> <span id="analyze_btn_text">Initialize Analysis Agent</span></button>
+                </div>
+            </div>
+
+            <div class="tabs">
+                <div class="tab active">Analysis Dashboard</div>
+                <div class="tab">Execution Graphs</div>
+                <div class="tab">Benchmark Results</div>
+                <div class="tab">Debug Runtime</div>
+            </div>
+
+            <!-- Architecture Cards -->
+            <div class="card-grid" id="analysis-dashboard">
+                <div class="card" onclick="showExplainability('Backend Framework', 'backend_framework')" style="cursor: pointer; transition: border-color 0.2s;" onmouseover="this.style.borderColor='var(--text-secondary)'" onmouseout="this.style.borderColor='var(--rule)'">
+                    <div class="card-header">Agent Detection: Backend <i data-lucide="server"></i></div>
+                    <div class="card-value" id="card_backend">-</div>
+                    <div class="card-meta"><div class="status-dot active"></div> High Confidence</div>
+                </div>
+                <div class="card" onclick="showExplainability('Architecture Pattern', 'architecture_pattern')" style="cursor: pointer; transition: border-color 0.2s;" onmouseover="this.style.borderColor='var(--text-secondary)'" onmouseout="this.style.borderColor='var(--rule)'">
+                    <div class="card-header">Inferred Architecture <i data-lucide="layers"></i></div>
+                    <div class="card-value" id="card_architecture">-</div>
+                    <div class="card-meta"><div class="status-dot warn"></div> Architecture Traced</div>
+                </div>
+                <div class="card" onclick="showExplainability('Authentication System', 'authentication_system')" style="cursor: pointer; transition: border-color 0.2s;" onmouseover="this.style.borderColor='var(--text-secondary)'" onmouseout="this.style.borderColor='var(--rule)'">
+                    <div class="card-header">Auth Architecture <i data-lucide="shield-check"></i></div>
+                    <div class="card-value" id="card_auth">-</div>
+                    <div class="card-meta"><div class="status-dot active"></div> Middleware Traced</div>
+                </div>
+                <div class="card">
+                    <div class="card-header">Graph Integrity <i data-lucide="activity"></i></div>
+                    <div class="card-value" id="card_graph">-</div>
+                    <div class="card-meta" id="card_graph_meta"><div class="status-dot active"></div> 0 Nodes Found</div>
+                </div>
+            </div>
+
+            <div class="panel-grid" id="execution-graphs">
+                <!-- Execution Graph Explorer -->
+                <div class="panel" id="graph_panel">
+                    <div class="panel-header">
+                        <div class="panel-title">Execution Flow Validation</div>
+                        <div class="actions">
+                            <button class="btn" style="padding: 4px 8px;" onclick="toggleFullscreen()"><i id="fullscreen_icon" data-lucide="maximize"></i></button>
+                        </div>
+                    </div>
+                    <div class="panel-content">
+                        <div class="graph-area" id="graph_container">
+                            <div style="color: var(--text-muted);">Awaiting analysis...</div>
+                        </div>
+                        <p style="font-size: 13px; color: var(--text-secondary);">Validating AST node extraction. Select node to review explainability evidence.</p>
+                    </div>
+                </div>
+
+            <!-- Viva Intelligence Panel -->
+                <div class="panel" style="overflow: hidden;" id="viva-intelligence">
+                    <div class="panel-header">
+                        <div class="panel-title">Viva Intelligence Output</div>
+                        <div id="viva_count" style="font-size:12px; color:var(--text-muted);">—</div>
+                    </div>
+                    <div class="panel-content" style="overflow-y:auto; max-height:680px;">
+                        <!-- Search -->
+                        <input class="viva-search-input" id="viva_search" type="text" placeholder="Search questions..." oninput="filterViva()">
+                        <!-- Category Filters -->
+                        <div class="viva-filters" id="viva_filters">
+                            <button class="viva-filter-btn active" data-cat="All" onclick="setVivaFilter(this)">All</button>
+                            <button class="viva-filter-btn" data-cat="Architecture" onclick="setVivaFilter(this)">Architecture</button>
+                            <button class="viva-filter-btn" data-cat="Tradeoff" onclick="setVivaFilter(this)">Tradeoff</button>
+                            <button class="viva-filter-btn" data-cat="Security" onclick="setVivaFilter(this)">Security</button>
+                            <button class="viva-filter-btn" data-cat="Scalability" onclick="setVivaFilter(this)">Scalability</button>
+                            <button class="viva-filter-btn" data-cat="Failure-Path" onclick="setVivaFilter(this)">Failure-Path</button>
+                            <button class="viva-filter-btn" data-cat="Runtime" onclick="setVivaFilter(this)">Runtime</button>
+                        </div>
+                        <!-- Cards -->
+                        <div id="viva_list">
+                            <div class="viva-empty">Awaiting analysis...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Benchmark Results Table -->
+            <div class="panel" id="anomalies" style="margin-bottom: 40px;">
+                <div class="panel-header">
+                    <div class="panel-title">Anomalies & Failure Paths</div>
+                    <div id="anomaly_count" style="font-size:12px; color:var(--text-muted);">—</div>
+                </div>
+                <div class="panel-content" id="anomaly_list">
+                    <div class="viva-empty">Awaiting analysis...</div>
+                </div>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 16px;" id="benchmarks">
+                <h3 style="font-size: 24px;">Evaluation Benchmark</h3>
+                <button class="btn"><i data-lucide="download"></i> Export Validation Report</button>
+            </div>
+            
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Intelligence Target</th>
+                            <th>Ground Truth (Expected)</th>
+                            <th>ORACLE Output (Actual)</th>
+                            <th>Precision</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="benchmark_rows">
+                        <tr>
+                            <td colspan="5" class="table-empty">Awaiting analysis to populate benchmark results.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Terminal -->
+            <div class="panel terminal-panel" id="agent-output">
+                <div class="terminal-header">
+                    <div class="term-dot"></div><div class="term-dot"></div><div class="term-dot"></div>
+                    <span style="margin-left: 8px; color: #8A8580;">oracle-agent ~ execution log</span>
+                </div>
+                <div class="terminal-body" id="terminal_body">
+                    <div class="log-line">
+                        <span class="log-time">00:00:00</span> 
+                        <span class="log-msg"><span class="log-info">[INFO]</span> Waiting for ORACLE agent initialization...</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Right Explainability Panel -->
+    <aside class="details-panel" id="explainability">
+        <div class="details-header">
+            <div class="details-title"><i data-lucide="microscope" style="width: 20px; height: 20px;"></i> Explainability</div>
+            <div class="details-subtitle">Evidence & Confidence Inspector</div>
+        </div>
+
+        <div class="inspector-content" id="inspector_content">
+            <div style="color:var(--text-muted); padding:20px; text-align:center; margin-top:40px;">
+                <i data-lucide="mouse-pointer-click" style="width: 32px; height: 32px; margin-bottom: 12px; opacity: 0.5;"></i>
+                <p>Click an analysis claim card to view its grounded evidence and AST snippets.</p>
+            </div>
+        </div>
+    </aside>
+
+    <script>
+        // Global State
+        window.currentAnalysisData = null;
+        window.panZoomInstance = null;
+        window._sidebarNavigationBound = false;
+
+        function setActiveSidebarTarget(targetId) {
+            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+            const target = document.querySelector(`.nav-item[data-scroll-target="${targetId}"]`);
+            if (target) {
+                target.classList.add('active');
+            }
+        }
+
+        function bindSidebarNavigation() {
+            if (window._sidebarNavigationBound) return;
+            document.querySelectorAll('.nav-item[data-scroll-target]').forEach(item => {
+                item.addEventListener('click', (event) => {
+                    event.preventDefault();
+                    const targetId = item.dataset.scrollTarget;
+                    const target = document.getElementById(targetId);
+                    if (target) {
+                        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        setActiveSidebarTarget(targetId);
+                    }
+                });
+            });
+            window._sidebarNavigationBound = true;
+        }
+
+        function toggleFullscreen() {
+            const panel = document.getElementById("graph_panel");
+            const btnIcon = document.getElementById("fullscreen_icon");
+            panel.classList.toggle("fullscreen");
+            
+            if (panel.classList.contains("fullscreen")) {
+                btnIcon.setAttribute("data-lucide", "minimize");
+            } else {
+                btnIcon.setAttribute("data-lucide", "maximize");
+            }
+            lucide.createIcons();
+            
+            if (window.panZoomInstance) {
+                setTimeout(() => {
+                    window.panZoomInstance.resize();
+                    window.panZoomInstance.fit();
+                    window.panZoomInstance.center();
+                }, 100);
+            }
+        }
+
+        // Initialize Lucide Icons
+        lucide.createIcons();
+
+        // Initialize Mermaid
+        mermaid.initialize({ startOnLoad: false, theme: 'base', themeVariables: {
+            fontFamily: 'SFMono-Regular, Consolas, monospace',
+            primaryColor: '#FAFAF8',
+            primaryTextColor: '#1C1A17',
+            primaryBorderColor: '#2B2825',
+            lineColor: '#D4D0CA',
+            secondaryColor: '#E8E3DC',
+            tertiaryColor: '#EDEAE5'
+        }});
+
+        window.showGraphNodeExplainability = function(nodeId) {
+            if (!window.currentAnalysisData || !window.currentAnalysisData.execution_graph) return;
+            const node = window.currentAnalysisData.execution_graph.nodes.find(n => n.id === nodeId);
+            if (!node) return;
+
+            const panel = document.getElementById("inspector_content");
+            const confidence = 100;
+            let html = `
+                <div class="inspector-section">
+                    <div class="inspector-label">Graph Node</div>
+                    <div class="target-node">
+                        <i data-lucide="git-commit"></i> ${node.label} [${node.type}]
+                    </div>
+                    <div class="confidence-meter">
+                        <span style="font-family: var(--font-mono); color: var(--text-primary);">${confidence}%</span>
+                        <span>Confidence Score</span>
+                    </div>
+                    <div class="meter-bar" style="margin-top: 8px;"><div class="meter-fill" style="width: ${confidence}%"></div></div>
+                </div>
+            `;
+            
+            if (node.metadata && node.metadata.file_path) {
+                html += `
+                <div class="inspector-section">
+                    <div class="inspector-label">Node Implementation Evidence</div>
+                    <div class="evidence-card">
+                        <div class="evidence-loc"><i data-lucide="file-code-2" style="width: 14px;"></i> ${node.metadata.file_path} ${node.metadata.line_number ? ': L'+node.metadata.line_number : ''}</div>
+                        <div class="code-snippet">
+                            <div class="highlight">${node.metadata.snippet || node.metadata.source_code || 'No snippet available'}</div>
+                        </div>
+                        <div class="card-meta">AST Extraction Evidence</div>
+                    </div>
+                </div>`;
+            } else {
+                html += `<div class="inspector-section"><div class="reasoning-text">No hard evidence collected for this node. (Inferred)</div></div>`;
+            }
+
+            panel.innerHTML = html;
+            lucide.createIcons();
+        };
+
+        async function renderExecutionGraph(graphData) {
+            const container = document.getElementById("graph_container");
+            if (!graphData || !graphData.nodes || graphData.nodes.length === 0) {
+                container.innerHTML = `<div style="color: var(--text-muted);">No execution graph generated.</div>`;
+                return;
+            }
+
+            container.innerHTML = `<div style="color: var(--text-muted);">Rendering graph...</div>`;
+
+            let code = 'graph TD;\n';
+            
+            code += 'classDef route fill:#FAFAF8,stroke:#2B2825,stroke-width:1px;\n';
+            code += 'classDef middleware fill:#E8E3DC,stroke:#2B2825,stroke-width:2px;\n';
+            code += 'classDef db fill:#EDEAE5,stroke:#4A4740,stroke-width:1px,stroke-dasharray: 5 5;\n';
+            code += 'classDef auth fill:#1C1A17,color:#E8E3DC,stroke:#1C1A17,stroke-width:1px;\n';
+
+            graphData.nodes.forEach(n => {
+                let safeLabel = n.label.replace(/"/g, "'");
+                code += `${n.id}["${safeLabel}"]\n`;
+                code += `click ${n.id} call showGraphNodeExplainability()\n`;
+
+                if(n.type === 'ROUTE' || n.type === 'API_CALL') code += `class ${n.id} route;\n`;
+                else if(n.type === 'MIDDLEWARE') code += `class ${n.id} middleware;\n`;
+                else if(n.type === 'DB_QUERY' || n.type === 'STATE_STORE') code += `class ${n.id} db;\n`;
+                else if(n.type === 'AUTH_HANDLER') code += `class ${n.id} auth;\n`;
+            });
+
+            graphData.edges.forEach(e => {
+                let safeRel = e.relationship.replace(/"/g, "'");
+                code += `${e.source}-->|"${safeRel}"|${e.target}\n`;
+            });
+
+            try {
+                const { svg } = await mermaid.render('mermaid_rendered_graph', code);
+                container.innerHTML = `<div id="mermaid_wrapper" style="width:100%; height:100%;">${svg}</div>`;
+                
+                const svgElem = document.querySelector('#mermaid_wrapper svg');
+                if (svgElem) {
+                    svgElem.style.maxWidth = '100%';
+                    svgElem.style.height = '100%';
+                    window.panZoomInstance = svgPanZoom(svgElem, {
+                        zoomEnabled: true,
+                        controlIconsEnabled: true,
+                        fit: true,
+                        center: true,
+                        minZoom: 0.5,
+                        maxZoom: 5
+                    });
+                }
+            } catch(e) {
+                console.error("Mermaid Render Error:", e);
+                container.innerHTML = `<div style="color: #8C3A3A;">Graph rendering failed.</div>`;
+            }
+        }
+
+        function showExplainability(title, dataKey) {
+            const panel = document.getElementById("inspector_content");
+            if (!window.currentAnalysisData) {
+                panel.innerHTML = `<div style="color:#A67B5B; padding:20px;">Run analysis first.</div>`;
+                return;
+            }
+            
+            const item = window.currentAnalysisData[dataKey];
+            if (!item || !item.value) {
+                panel.innerHTML = `<div style="color:var(--text-muted); padding:20px;">No evidence found for this claim.</div>`;
+                return;
+            }
+
+            const confidence = item.confidence ? Math.round(item.confidence * 100) : 0;
+            let html = `
+                <div class="inspector-section">
+                    <div class="inspector-label">Inspection Target</div>
+                    <div class="target-node">
+                        <i data-lucide="microscope"></i> ${title}: ${item.value}
+                    </div>
+                    <div class="confidence-meter">
+                        <span style="font-family: var(--font-mono); color: var(--text-primary);">${confidence}%</span>
+                        <span>Confidence Score</span>
+                    </div>
+                    <div class="meter-bar" style="margin-top: 8px;"><div class="meter-fill" style="width: ${confidence}%"></div></div>
+                </div>
+            `;
+            
+            if (item.evidence && item.evidence.length > 0) {
+                html += `<div class="inspector-section">`;
+                item.evidence.forEach((evStr, i) => {
+                    html += `<div class="inspector-label">Grounded Evidence (${i+1}/${item.evidence.length})</div>`;
+                    
+                    try {
+                        const ev = JSON.parse(evStr);
+                        html += `
+                        <div class="evidence-card">
+                            <div class="evidence-loc"><i data-lucide="file-code-2" style="width: 14px;"></i> ${ev.file || 'Unknown'} : L${ev.line || '?'}</div>
+                            <div class="code-snippet">
+                                <div class="highlight">${ev.snippet || ''}</div>
+                            </div>
+                            <div class="card-meta">Signal Weight: ${ev.weight || 'N/A'}</div>
+                        </div>`;
+                    } catch (e) {
+                        // Fallback for plain string evidence
+                        html += `
+                        <div class="evidence-card">
+                            <div class="reasoning-text" style="font-size: 13px;">"${evStr}"</div>
+                        </div>`;
+                    }
+                });
+                html += `</div>`;
+            } else {
+                html += `<div class="inspector-section"><div class="reasoning-text">No hard evidence collected. Inferred via heuristics.</div></div>`;
+            }
+
+            panel.innerHTML = html;
+            lucide.createIcons();
+        }
+
+        function renderBenchmarkResults(payload) {
+            const tbody = document.getElementById('benchmark_rows');
+            if (!tbody) return;
+
+            const expected = payload?.evaluation_metrics?.expected || {};
+            const metrics = payload?.evaluation_metrics?.metrics || {};
+            const mismatches = payload?.evaluation_metrics?.mismatches || [];
+
+            const detectedStack = [
+                payload?.frontend_framework?.value,
+                payload?.backend_framework?.value,
+                payload?.database_used?.value
+            ].filter(value => value && value !== 'Unknown');
+
+            const backendExpected = Array.isArray(expected.expected_stack)
+                ? expected.expected_stack.join(', ')
+                : (expected.expected_stack || '—');
+
+            const backendActual = detectedStack.length > 0 ? detectedStack.join(', ') : 'Unknown';
+            const stackPrecision = typeof metrics.stack_accuracy === 'number' ? metrics.stack_accuracy : null;
+
+            const authExpected = expected.expected_protected_routes != null
+                ? String(expected.expected_protected_routes)
+                : (expected.expected_auth || '—');
+            const authActual = payload?.execution_graph?.nodes?.filter(n => n.type === 'AUTH_HANDLER').length ?? 0;
+            const authPrecision = typeof metrics.auth_detection_accuracy === 'number' ? metrics.auth_detection_accuracy : null;
+
+            const architectureExpected = expected.expected_architecture || '—';
+            const architectureActual = payload?.architecture_pattern?.value || 'Unknown';
+            const architecturePrecision = architectureExpected !== '—'
+                ? (architectureExpected === architectureActual ? 1 : 0)
+                : null;
+
+            const rows = [
+                {
+                    target: 'Backend Stack',
+                    expected: backendExpected,
+                    actual: backendActual,
+                    precision: stackPrecision,
+                    status: stackPrecision == null ? 'PENDING' : (stackPrecision >= 1 ? 'PASS' : 'WARN')
+                },
+                {
+                    target: 'Authentication Layer',
+                    expected: authExpected,
+                    actual: String(authActual),
+                    precision: authPrecision,
+                    status: authPrecision == null ? 'PENDING' : (authPrecision >= 1 ? 'PASS' : 'WARN')
+                },
+                {
+                    target: 'Architecture Pattern',
+                    expected: architectureExpected,
+                    actual: architectureActual,
+                    precision: architecturePrecision,
+                    status: architecturePrecision == null ? 'PENDING' : (architecturePrecision >= 1 ? 'PASS' : 'ANOMALY')
+                }
+            ];
+
+            tbody.innerHTML = rows.map(row => {
+                const precisionText = row.precision == null ? '—' : row.precision.toFixed(2);
+                const statusClass = row.status === 'PASS' ? 'pass' : (row.status === 'ANOMALY' ? 'hard' : 'warn');
+                return `
+                    <tr>
+                        <td>${row.target}</td>
+                        <td class="mono">${row.expected}</td>
+                        <td class="mono">${row.actual}</td>
+                        <td class="mono">${precisionText}</td>
+                        <td><span class="tag ${statusClass}">${row.status}</span></td>
+                    </tr>`;
+            }).join('');
+
+            if (mismatches.length > 0) {
+                tbody.innerHTML += `
+                    <tr>
+                        <td colspan="5" class="table-empty">${mismatches.length} mismatch${mismatches.length === 1 ? '' : 'es'} detected in the latest evaluation.</td>
+                    </tr>`;
+            }
+        }
+
+        function renderAnomalies(payload) {
+            const list = document.getElementById('anomaly_list');
+            const count = document.getElementById('anomaly_count');
+            if (!list || !count) return;
+
+            const runtimeRisks = payload?.runtime_risks || [];
+            const failurePaths = payload?.failure_paths || [];
+
+            count.textContent = `${runtimeRisks.length + failurePaths.length} item${runtimeRisks.length + failurePaths.length === 1 ? '' : 's'}`;
+
+            if (runtimeRisks.length === 0 && failurePaths.length === 0) {
+                list.innerHTML = `<div class="viva-empty">No anomalies or failure paths detected in the current analysis.</div>`;
+                return;
+            }
+
+            const riskCards = runtimeRisks.map(risk => `
+                <div class="evidence-card">
+                    <div class="evidence-loc"><i data-lucide="shield-alert" style="width: 14px;"></i> Runtime Risk - ${risk.severity || 'UNKNOWN'}</div>
+                    <div class="reasoning-text" style="margin-bottom:12px;">${risk.value || 'Unnamed runtime risk'}</div>
+                    <div class="card-meta">Confidence: ${(Math.round((risk.confidence || 0) * 100))}%</div>
+                    ${Array.isArray(risk.evidence) && risk.evidence.length > 0 ? `<div class="card-meta" style="margin-top:8px;">Evidence: ${risk.evidence.join(' | ')}</div>` : ''}
+                </div>
+            `).join('');
+
+            const failureCards = failurePaths.map(path => `
+                <div class="evidence-card">
+                    <div class="evidence-loc"><i data-lucide="triangle-alert" style="width: 14px;"></i> Failure Path</div>
+                    <div class="reasoning-text" style="margin-bottom:12px;">${path.value || 'Unnamed failure path'}</div>
+                    <div class="card-meta">Confidence: ${(Math.round((path.confidence || 0) * 100))}%</div>
+                    ${Array.isArray(path.evidence) && path.evidence.length > 0 ? `<div class="card-meta" style="margin-top:8px;">Evidence: ${path.evidence.join(' | ')}</div>` : ''}
+                </div>
+            `).join('');
+
+            list.innerHTML = `${riskCards}${failureCards}`;
+            lucide.createIcons();
+        }
+
+        // ── Viva Intelligence JS ─────────────────────────────────────────────
+        window._vivaData = [];
+        window._vivaFilter = 'All';
+
+        function catClass(cat) {
+            const map = {
+                'Architecture': 'viva-cat-architecture',
+                'Tradeoff':     'viva-cat-tradeoff',
+                'Security':     'viva-cat-security',
+                'Scalability':  'viva-cat-scalability',
+                'Failure-Path': 'viva-cat-failure-path',
+                'Runtime':      'viva-cat-runtime'
+            };
+            return map[cat] || 'viva-cat-architecture';
+        }
+
+        function diffTag(diff) {
+            if (diff === 'hard')   return `<span class="tag hard">HARD</span>`;
+            if (diff === 'medium') return `<span class="tag" style="border-color:#7B6B52;color:#7B6B52;">MED</span>`;
+            return `<span class="tag pass">EASY</span>`;
+        }
+
+        function buildVivaCard(v, idx) {
+            const depthPct = Math.round((v.depth_score || 5) * 10);
+            const confPct  = Math.round((v.confidence || 0.8) * 100);
+            return `
+            <div class="viva-card" data-cat="${v.category || v.topic}" data-idx="${idx}" onclick="showVivaExplainability(${idx})">
+                <div class="viva-card-header">
+                    <div>
+                        <span class="viva-category-badge ${catClass(v.category || v.topic)}">${v.category || v.topic}</span>
+                    </div>
+                    <div class="viva-card-meta">
+                        ${diffTag(v.difficulty)}
+                        <span style="font-family:var(--font-mono);font-size:11px;color:var(--text-muted)">${confPct}% conf</span>
+                    </div>
+                </div>
+                <div class="viva-question">"${v.focus || v.question_target}"</div>
+                <div class="depth-bar-wrap">
+                    <span class="depth-label">Depth Score</span>
+                    <div class="depth-bar-outer"><div class="depth-bar-fill" style="width:${depthPct}%"></div></div>
+                    <span class="depth-score-num">${(v.depth_score || 5).toFixed(1)}</span>
+                </div>
+                ${v.related_node ? `<div class="viva-related-node">⬡ ${v.related_node}</div>` : ''}
+                ${v.reasoning_summary ? `
+                <button class="viva-expand-btn" onclick="event.stopPropagation(); toggleReasoning(this)">▸ Show reasoning</button>
+                <div class="viva-reasoning">${v.reasoning_summary}</div>` : ''}
+            </div>`;
+        }
+
+        function renderVivaCards() {
+            const list    = document.getElementById('viva_list');
+            const search  = (document.getElementById('viva_search')?.value || '').toLowerCase();
+            const cat     = window._vivaFilter;
+            const data    = window._vivaData;
+
+            const filtered = data.filter(v => {
+                const matchCat  = cat === 'All' || (v.category || v.topic) === cat;
+                const matchText = !search ||
+                    (v.focus || '').toLowerCase().includes(search) ||
+                    (v.question_target || '').toLowerCase().includes(search) ||
+                    (v.reasoning_summary || '').toLowerCase().includes(search);
+                return matchCat && matchText;
+            });
+
+            if (filtered.length === 0) {
+                list.innerHTML = `<div class="viva-empty">No questions match your filter.</div>`;
+                return;
+            }
+            list.innerHTML = filtered.map((v, i) => buildVivaCard(v, data.indexOf(v))).join('');
+        }
+
+        function renderVivaIntelligence(targets) {
+            window._vivaData = targets || [];
+            document.getElementById('viva_count').textContent = `${window._vivaData.length} question${window._vivaData.length !== 1 ? 's' : ''}`;
+            renderVivaCards();
+        }
+
+        function setVivaFilter(btn) {
+            document.querySelectorAll('.viva-filter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            window._vivaFilter = btn.dataset.cat;
+            renderVivaCards();
+        }
+
+        function filterViva() { renderVivaCards(); }
+
+        function toggleReasoning(btn) {
+            const box = btn.nextElementSibling;
+            const open = box.classList.toggle('open');
+            btn.textContent = (open ? '▾ Hide reasoning' : '▸ Show reasoning');
+        }
+
+        function showVivaExplainability(idx) {
+            const v = window._vivaData[idx];
+            if (!v) return;
+            const panel = document.getElementById('inspector_content');
+            const confPct = Math.round((v.confidence || 0.8) * 100);
+
+            let html = `
+                <div class="inspector-section">
+                    <div class="inspector-label">Viva Question</div>
+                    <div class="target-node">
+                        <i data-lucide="help-circle"></i> ${v.question_target || v.topic}
+                    </div>
+                    <div class="confidence-meter" style="margin-top:12px;">
+                        <span style="font-family:var(--font-mono);color:var(--text-primary);">${confPct}%</span>
+                        <span>Engine Confidence</span>
+                    </div>
+                    <div class="meter-bar" style="margin-top:8px;"><div class="meter-fill" style="width:${confPct}%"></div></div>
+                </div>
+
+                <div class="inspector-section">
+                    <div class="inspector-label">Question Text</div>
+                    <div class="reasoning-text">"${v.focus || v.question_target}"</div>
+                </div>`;
+
+            if (v.reasoning_summary) {
+                html += `<div class="inspector-section">
+                    <div class="inspector-label">Agent Reasoning</div>
+                    <div class="reasoning-text">${v.reasoning_summary}</div>
+                </div>`;
+            }
+
+            if (v.related_node) {
+                html += `<div class="inspector-section">
+                    <div class="inspector-label">Related Implementation Node</div>
+                    <div class="target-node"><i data-lucide="git-commit"></i> ${v.related_node}</div>`;
+
+                // Try to find graph node evidence
+                const graph = window.currentAnalysisData?.execution_graph;
+                if (graph) {
+                    const node = graph.nodes.find(n => n.id === v.related_node || n.label.toLowerCase().includes(v.related_node.toLowerCase()));
+                    if (node && node.metadata?.file_path) {
+                        html += `<div class="evidence-card" style="margin-top:12px;">
+                            <div class="evidence-loc"><i data-lucide="file-code-2" style="width:14px;"></i> ${node.metadata.file_path}${node.metadata.line_number ? ' : L' + node.metadata.line_number : ''}</div>
+                            <div class="code-snippet"><div class="highlight">${node.metadata.snippet || 'No snippet available'}</div></div>
+                            <div class="card-meta">AST Extraction Evidence</div>
+                        </div>`;
+                    }
+                }
+                html += `</div>`;
+            }
+
+            html += `<div class="inspector-section">
+                <div class="inspector-label">Intelligence Metadata</div>
+                <div class="card-meta" style="gap:12px;flex-direction:column;align-items:flex-start;">
+                    <span>Category: <strong>${v.category || v.topic}</strong></span>
+                    <span>Difficulty: <strong>${v.difficulty}</strong></span>
+                    <span>Depth Score: <strong>${(v.depth_score||5).toFixed(1)} / 10</strong></span>
+                </div>
+            </div>`;
+
+            panel.innerHTML = html;
+            lucide.createIcons();
+        }
+        // ── End Viva Intelligence JS ──────────────────────────────────────────
+
+        function addLog(msg, type="info") {
+            const term = document.getElementById("terminal_body");
+            const time = new Date().toLocaleTimeString('en-US', { hour12: false });
+            let typeHtml = `<span class="log-info">[INFO]</span>`;
+            if(type === "warn") typeHtml = `<span class="log-warn">[WARN]</span>`;
+            if(type === "success") typeHtml = `<span class="log-success">[SUCCESS]</span>`;
+            if(type === "error") typeHtml = `<span style="color:#8C3A3A;">[ERROR]</span>`;
+            
+            term.innerHTML += `
+                <div class="log-line">
+                    <span class="log-time">${time}</span> 
+                    <span class="log-msg">${typeHtml} ${msg}</span>
+                </div>
+            `;
+            term.scrollTop = term.scrollHeight;
+        }
+
+        async function analyzeRepo() {
+            const btn = document.getElementById("analyze_btn");
+            const btnText = document.getElementById("analyze_btn_text");
+            const url = document.getElementById("repo_url").value;
+            const term = document.getElementById("terminal_body");
+            
+            if (!url) return alert("Please enter a repository URL.");
+            
+            // Set loading state
+            btn.disabled = true;
+            btnText.innerText = "Initializing ORACLE Agent...";
+            
+            // Clear old logs
+            term.innerHTML = '';
+            addLog(`Connecting to ORACLE Intelligence Engine via WebSocket...`);
+
+            try {
+                const ws = new WebSocket("ws://localhost:8001/ws/analyze");
+                
+                ws.onopen = () => {
+                    addLog("WebSocket connection established.", "success");
+                    ws.send(JSON.stringify({ repo_url: url }));
+                };
+                
+                ws.onmessage = (event) => {
+                    const data = JSON.parse(event.data);
+                    
+                    if (data.type === "log") {
+                        addLog(data.message, data.log_type || "info");
+                    } 
+                    else if (data.type === "result") {
+                        const payload = data.data;
+                        window.currentAnalysisData = payload;
+                        bindSidebarNavigation();
+                        
+                        // Update Dashboard Cards
+                        document.getElementById("card_backend").innerText = payload.backend_framework?.value || "Unknown";
+                        document.getElementById("card_architecture").innerText = payload.architecture_pattern?.value || "Unknown";
+                        document.getElementById("card_auth").innerText = payload.authentication_system?.value || "None detected";
+                        
+                        const nodeCount = payload.execution_graph?.nodes?.length || 0;
+                        document.getElementById("card_graph").innerText = nodeCount > 0 ? "Stable" : "Empty";
+                        document.getElementById("card_graph_meta").innerHTML = `<div class="status-dot active"></div> ${nodeCount} Nodes Found`;
+
+                        // Render the real execution graph
+                        renderExecutionGraph(payload.execution_graph);
+
+                        // Render Viva Intelligence cards
+                        const vivaTargets = payload.viva_intelligence_targets?.length
+                            ? payload.viva_intelligence_targets
+                            : (payload.implementation_viva_targets || []);
+                        renderVivaIntelligence(vivaTargets);
+
+                        renderBenchmarkResults(payload);
+                        renderAnomalies(payload);
+                    }
+                };
+                
+                ws.onerror = (error) => {
+                    console.error("WebSocket Error:", error);
+                    addLog("WebSocket connection error. Is FastAPI running on port 8001?", "error");
+                };
+                
+                ws.onclose = () => {
+                    btn.disabled = false;
+                    btnText.innerText = "Initialize Analysis Agent";
+                    addLog("Connection closed.", "info");
+                };
+                
+            } catch (err) {
+                console.error(err);
+                addLog(`Failed to initialize WebSocket.`, "error");
+                btn.disabled = false;
+                btnText.innerText = "Initialize Analysis Agent";
+            }
+        }
+
+        bindSidebarNavigation();
+    </script>
+</body>
+</html>

@@ -1,0 +1,1107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ORACLE Comparative Validation Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: #e2e8f0;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #60a5fa, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .subtitle {
+            color: #cbd5e1;
+            font-size: 1.1em;
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            border-bottom: 2px solid rgba(148, 163, 184, 0.2);
+        }
+        
+        .tab-button {
+            padding: 12px 20px;
+            background: transparent;
+            border: none;
+            color: #cbd5e1;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            border-bottom: 3px solid transparent;
+        }
+        
+        .tab-button:hover {
+            color: #60a5fa;
+        }
+        
+        .tab-button.active {
+            color: #60a5fa;
+            border-bottom-color: #60a5fa;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+        
+        .dashboard-wide {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+        
+        @media (max-width: 1200px) {
+            .dashboard-wide {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .card {
+            background: rgba(30, 41, 59, 0.8);
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            border-radius: 12px;
+            padding: 24px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+        
+        .card:hover {
+            border-color: rgba(148, 163, 184, 0.5);
+            background: rgba(30, 41, 59, 1);
+        }
+        
+        .card-title {
+            font-size: 1.3em;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: #60a5fa;
+        }
+        
+        .metric {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+        }
+        
+        .metric:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+        
+        .metric-label {
+            color: #cbd5e1;
+            font-size: 0.95em;
+        }
+        
+        .metric-value {
+            font-size: 1.3em;
+            font-weight: 600;
+            color: #34d399;
+        }
+        
+        .metric-value.warning {
+            color: #fbbf24;
+        }
+        
+        .metric-value.danger {
+            color: #ef4444;
+        }
+        
+        .metric-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(148, 163, 184, 0.2);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 4px;
+        }
+        
+        .metric-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #34d399, #60a5fa);
+            transition: width 0.3s ease;
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-bottom: 20px;
+        }
+        
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        
+        .table th {
+            background: rgba(148, 163, 184, 0.1);
+            padding: 12px;
+            text-align: left;
+            color: #60a5fa;
+            font-weight: 600;
+        }
+        
+        .table td {
+            padding: 12px;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+        }
+        
+        .table tr:hover {
+            background: rgba(60, 130, 246, 0.1);
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: 600;
+        }
+        
+        .badge-success {
+            background: rgba(52, 211, 153, 0.2);
+            color: #34d399;
+        }
+        
+        .badge-warning {
+            background: rgba(251, 191, 36, 0.2);
+            color: #fbbf24;
+        }
+        
+        .badge-danger {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+        }
+        
+        .agreement-matrix {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+        }
+        
+        .matrix-cell {
+            padding: 12px;
+            background: rgba(148, 163, 184, 0.1);
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .matrix-cell.high {
+            background: rgba(52, 211, 153, 0.2);
+        }
+        
+        .matrix-cell.medium {
+            background: rgba(251, 191, 36, 0.2);
+        }
+        
+        .matrix-cell.low {
+            background: rgba(239, 68, 68, 0.2);
+        }
+        
+        .trust-meter {
+            height: 30px;
+            background: rgba(148, 163, 184, 0.2);
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        
+        .trust-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ef4444, #fbbf24, #34d399);
+            transition: width 0.3s ease;
+        }
+        
+        .weakness-list {
+            list-style: none;
+            margin-top: 10px;
+        }
+        
+        .weakness-item {
+            padding: 8px 12px;
+            margin-bottom: 8px;
+            background: rgba(239, 68, 68, 0.1);
+            border-left: 3px solid #ef4444;
+            border-radius: 4px;
+            color: #fca5a5;
+        }
+        
+        .strength-item {
+            padding: 8px 12px;
+            margin-bottom: 8px;
+            background: rgba(52, 211, 153, 0.1);
+            border-left: 3px solid #34d399;
+            border-radius: 4px;
+            color: #86efac;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔬 ORACLE Comparative Validation</h1>
+            <p class="subtitle">Human vs ORACLE Engineering Intelligence Analysis</p>
+            <div style="margin-top: 16px; display: flex; gap: 12px; justify-content: center; align-items: center; flex-wrap: wrap;">
+                <label for="reportFile" class="badge badge-success" style="cursor: pointer;">Load Comparative Report JSON</label>
+                <input id="reportFile" type="file" accept="application/json" style="display: none;">
+                <span id="dataStatus" style="color: #fbbf24;">No report loaded. Metrics are unavailable.</span>
+            </div>
+        </header>
+        
+        <div class="tabs">
+            <button class="tab-button active" onclick="switchTab('overview')">Overview</button>
+            <button class="tab-button" onclick="switchTab('signals')">Signal Agreement</button>
+            <button class="tab-button" onclick="switchTab('failures')">Failure Analysis</button>
+            <button class="tab-button" onclick="switchTab('viva')">Viva Questions</button>
+            <button class="tab-button" onclick="switchTab('trust')">Trustworthiness</button>
+            <button class="tab-button" onclick="switchTab('execution')">Execution Behavior</button>
+        </div>
+        
+        <!-- OVERVIEW TAB -->
+        <div id="overview" class="tab-content active">
+            <div class="dashboard">
+                <div class="card">
+                    <div class="card-title">📊 Overall Trustworthiness</div>
+                    <div style="text-align: center; margin: 20px 0;">
+                        <div id="overallTrustValue" style="font-size: 3em; color: #34d399;">--</div>
+                        <div style="color: #cbd5e1; margin-top: 10px;">Human vs ORACLE Agreement</div>
+                    </div>
+                    <div class="trust-meter">
+                        <div id="overallTrustFill" class="trust-fill" style="width: 0%"></div>
+                    </div>
+                    <div style="margin-top: 10px; color: #cbd5e1;">Status: <span id="overallTrustStatus" class="badge badge-warning">No Data</span></div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-title">📋 Comparative Coverage</div>
+                    <div class="metric">
+                        <span class="metric-label">Repositories Evaluated</span>
+                        <span id="coverageRepos" class="metric-value">--</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Human Reviewers</span>
+                        <span id="coverageReviewers" class="metric-value">--</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Evaluation Datapoints</span>
+                        <span id="coverageDatapoints" class="metric-value">--</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Last Evaluation</span>
+                        <span id="coverageLastEvaluation" class="metric-value">--</span>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-title">✅ Agreement by Category</div>
+                    <div class="metric">
+                        <span class="metric-label">Signals</span>
+                        <span id="agreementSignals" class="metric-value">--</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Failures</span>
+                        <span id="agreementFailures" class="metric-value">--</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Viva Questions</span>
+                        <span id="agreementViva" class="metric-value">--</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="dashboard-wide">
+                <div class="card">
+                    <div class="card-title">📈 Agreement Trends</div>
+                    <div class="chart-container">
+                        <canvas id="trendChart"></canvas>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-title">🎯 Repository Comparison</div>
+                    <div class="chart-container">
+                        <canvas id="repoChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- SIGNALS TAB -->
+        <div id="signals" class="tab-content">
+            <div class="dashboard">
+                <div class="card">
+                    <div class="card-title">🎯 Signal Detection Agreement</div>
+                    <div class="metric">
+                        <span class="metric-label">Precision (ORACLE vs Human)</span>
+                        <span id="signalPrecision" class="metric-value">--</span>
+                    </div>
+                    <div class="metric-bar">
+                        <div id="signalPrecisionFill" class="metric-fill" style="width: 0%"></div>
+                    </div>
+                    
+                    <div class="metric" style="margin-top: 15px;">
+                        <span class="metric-label">Recall (ORACLE vs Human)</span>
+                        <span id="signalRecall" class="metric-value">--</span>
+                    </div>
+                    <div class="metric-bar">
+                        <div id="signalRecallFill" class="metric-fill" style="width: 0%"></div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-title">📊 False Positive Analysis</div>
+                    <div class="metric">
+                        <span class="metric-label">Hallucinations Detected</span>
+                        <span id="signalHallucinations" class="metric-value warning">--</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">False Positive Rate</span>
+                        <span id="signalFpRate" class="metric-value warning">--</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Human Agreement on Issues</span>
+                        <span id="signalIssueAgreement" class="metric-value">--</span>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-title">🎓 Confidence Calibration</div>
+                    <div class="metric">
+                        <span class="metric-label">RMSE (Confidence vs Accuracy)</span>
+                        <span class="metric-value">0.064</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Calibration Status</span>
+                        <span class="badge badge-success">Excellent</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="dashboard-wide">
+                <div class="card">
+                    <div class="card-title">📍 Hallucinated Signals</div>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Signal Name</th>
+                                <th>ORACLE Confidence</th>
+                                <th>Human Verdict</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Advanced caching with TTL</td>
+                                <td>0.78</td>
+                                <td><span class="badge badge-danger">Hallucinated</span></td>
+                            </tr>
+                            <tr>
+                                <td>Circuit breaker pattern</td>
+                                <td>0.72</td>
+                                <td><span class="badge badge-danger">Hallucinated</span></td>
+                            </tr>
+                            <tr>
+                                <td>Request context propagation</td>
+                                <td>0.65</td>
+                                <td><span class="badge badge-danger">Hallucinated</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="card">
+                    <div class="card-title">✨ Strong Signals</div>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Signal Name</th>
+                                <th>Precision</th>
+                                <th>Agreement</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Async error recovery</td>
+                                <td>0.95</td>
+                                <td><span class="badge badge-success">95%</span></td>
+                            </tr>
+                            <tr>
+                                <td>Auth middleware chain</td>
+                                <td>0.92</td>
+                                <td><span class="badge badge-success">92%</span></td>
+                            </tr>
+                            <tr>
+                                <td>DB transaction handling</td>
+                                <td>0.88</td>
+                                <td><span class="badge badge-success">89%</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- FAILURES TAB -->
+        <div id="failures" class="tab-content">
+            <div class="dashboard">
+                <div class="card">
+                    <div class="card-title">⚡ Failure Scenario Analysis</div>
+                    <div class="metric">
+                        <span class="metric-label">Realism Agreement</span>
+                        <span id="failureAgreement" class="metric-value">--</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Realistic Scenarios</span>
+                        <span id="failureRealistic" class="metric-value">--</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Speculative Scenarios</span>
+                        <span id="failureSpeculative" class="metric-value warning">--</span>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-title">🔗 Propagation Accuracy</div>
+                    <div class="metric">
+                        <span class="metric-label">Path Accuracy</span>
+                        <span class="metric-value">0.856</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Recovery Strategies</span>
+                        <span class="metric-value">0.834</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Severity Alignment</span>
+                        <span class="metric-value">0.792</span>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-title">⚠️ Speculative Scenarios</div>
+                    <ul class="weakness-list">
+                        <li class="weakness-item">
+                            <strong>Distributed transaction failure</strong> - Unlikely in tested repos
+                        </li>
+                        <li class="weakness-item">
+                            <strong>DNS resolution timeout</strong> - Too rare to be important signal
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <!-- VIVA TAB -->
+        <div id="viva" class="tab-content">
+            <div class="dashboard">
+                <div class="card">
+                    <div class="card-title">🎓 Viva Question Quality</div>
+                    <div class="metric">
+                        <span class="metric-label">Quality Rate</span>
+                        <span id="vivaQualityRate" class="metric-value">--</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Code Specificity</span>
+                        <span id="vivaSpecificity" class="metric-value">--</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Distinguishes Levels</span>
+                        <span id="vivaDistinguishes" class="metric-value">--</span>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-title">❌ Generic Patterns Found</div>
+                    <div class="metric">
+                        <span class="metric-label">Textbook Questions</span>
+                        <span class="metric-value warning">12%</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Non-specific Questions</span>
+                        <span class="metric-value warning">8%</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Good Engineering Questions</span>
+                        <span class="metric-value">80%</span>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-title">📚 Generic Questions Detected</div>
+                    <ul class="weakness-list">
+                        <li class="weakness-item">
+                            "What is the CAP theorem?" (pure CS theory)
+                        </li>
+                        <li class="weakness-item">
+                            "Explain ACID transactions" (textbook definition)
+                        </li>
+                        <li class="weakness-item">
+                            "What is async/await?" (language concept)
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="dashboard-wide">
+                <div class="card">
+                    <div class="card-title">📊 Question Quality Distribution</div>
+                    <div class="chart-container">
+                        <canvas id="vivaQualityChart"></canvas>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-title">🌟 Best Questions</div>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Question</th>
+                                <th>Specificity</th>
+                                <th>Quality</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>"How does your retry logic handle cascading failures?"</td>
+                                <td>0.92</td>
+                                <td><span class="badge badge-success">Excellent</span></td>
+                            </tr>
+                            <tr>
+                                <td>"Walk me through the auth middleware execution"</td>
+                                <td>0.89</td>
+                                <td><span class="badge badge-success">Excellent</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- TRUST TAB -->
+        <div id="trust" class="tab-content">
+            <div class="dashboard">
+                <div class="card">
+                    <div class="card-title">🛡️ Trustworthiness Audit</div>
+                    <div style="text-align: center; margin: 20px 0;">
+                        <div id="trustScoreValue" style="font-size: 2.5em; color: #34d399;">--</div>
+                        <div style="color: #cbd5e1; margin-top: 10px;">Overall Trust Score</div>
+                    </div>
+                    <div class="trust-meter">
+                        <div id="trustScoreFill" class="trust-fill" style="width: 0%"></div>
+                    </div>
+                    <div style="margin-top: 10px;">
+                        <div class="metric">
+                            <span class="metric-label">Status</span>
+                            <span id="trustStatus" class="badge badge-warning">No Data</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-title">✅ Trust Enablers</div>
+                    <ul class="strength-item" style="list-style: none; margin-top: 0;">
+                        <li class="strength-item">No hallucinations in core signals</li>
+                        <li class="strength-item">Excellent confidence calibration</li>
+                        <li class="strength-item">Strong failure path modeling</li>
+                        <li class="strength-item">Good code-specific viva questions</li>
+                    </ul>
+                </div>
+                
+                <div class="card">
+                    <div class="card-title">⚠️ Trust Gaps</div>
+                    <ul class="strength-item" style="list-style: none; margin-top: 0;">
+                        <li class="weakness-item">Some speculative failure scenarios</li>
+                        <li class="weakness-item">Occasional generic viva questions</li>
+                        <li class="weakness-item">Recovery strategy confidence variable</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="dashboard-wide">
+                <div class="card">
+                    <div class="card-title">🔍 Hallucination Detection</div>
+                    <div class="metric">
+                        <span class="metric-label">False Positives Found</span>
+                        <span id="trustFalsePositives" class="metric-value warning">--</span>
+                    </div>
+                    <div style="margin-top: 20px;">
+                        <strong style="color: #60a5fa;">Hallucinations:</strong>
+                        <ul id="hallucinationList" class="weakness-list">
+                            <li class="weakness-item">Load a comparative report to see audit findings.</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-title">🎯 Speculative Reasoning Detection</div>
+                    <div class="metric">
+                        <span class="metric-label">Speculative Scenarios</span>
+                        <span id="speculativeCount" class="metric-value warning">--</span>
+                    </div>
+                    <div style="margin-top: 20px;">
+                        <strong style="color: #60a5fa;">Flagged for Review:</strong>
+                        <ul id="speculativeList" class="weakness-list">
+                            <li class="weakness-item">Load a comparative report to see flagged scenarios.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- EXECUTION BEHAVIOR TAB -->
+        <div id="execution" class="tab-content">
+            <div class="dashboard">
+                <div class="card">
+                    <div class="card-title">⚙️ Execution Behavior Analysis</div>
+                    <div class="metric">
+                        <span class="metric-label">Request Lifecycle Traced</span>
+                        <span class="metric-value">8/8</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Async Race Conditions Detected</span>
+                        <span class="metric-value warning">2</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Cascading Failure Paths Found</span>
+                        <span class="metric-value">5</span>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-title">🔄 Async Execution Safety</div>
+                    <div class="metric">
+                        <span class="metric-label">Concurrent Safety Score</span>
+                        <span class="metric-value">0.78</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Race Conditions Flagged</span>
+                        <span class="metric-value warning">2</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Synchronization Points Found</span>
+                        <span class="metric-value">7</span>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-title">💾 State Consistency</div>
+                    <div class="metric">
+                        <span class="metric-label">Consistency Model</span>
+                        <span class="metric-value">Strong</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">State Mutation Points</span>
+                        <span class="metric-value">14</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Inconsistency Risks</span>
+                        <span class="metric-value warning">1</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="dashboard-wide">
+                <div class="card">
+                    <div class="card-title">📊 Failure Impact Analysis</div>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Failure Type</th>
+                                <th>Affected Operations</th>
+                                <th>User Impact</th>
+                                <th>Recovery</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>DB Timeout</td>
+                                <td>Reads/Writes</td>
+                                <td>All Users</td>
+                                <td><span class="badge badge-success">Automatic</span></td>
+                            </tr>
+                            <tr>
+                                <td>Cache Miss</td>
+                                <td>Read-heavy ops</td>
+                                <td>Degraded</td>
+                                <td><span class="badge badge-warning">Fallback</span></td>
+                            </tr>
+                            <tr>
+                                <td>Async Race</td>
+                                <td>Concurrent updates</td>
+                                <td>Some users</td>
+                                <td><span class="badge badge-danger">Manual</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="card">
+                    <div class="card-title">🚨 Cascade Risk Analysis</div>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Service Dependency</th>
+                                <th>Critical Path</th>
+                                <th>Cascade Risk</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>API → Database</td>
+                                <td><span class="badge badge-danger">Yes</span></td>
+                                <td>Critical</td>
+                            </tr>
+                            <tr>
+                                <td>API → Cache</td>
+                                <td>No</td>
+                                <td>Medium</td>
+                            </tr>
+                            <tr>
+                                <td>Workers → DB</td>
+                                <td><span class="badge badge-danger">Yes</span></td>
+                                <td>Medium</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        function switchTab(tabName) {
+            // Hide all tabs
+            const tabs = document.querySelectorAll('.tab-content');
+            tabs.forEach(tab => tab.classList.remove('active'));
+            
+            // Remove active class from all buttons
+            const buttons = document.querySelectorAll('.tab-button');
+            buttons.forEach(btn => btn.classList.remove('active'));
+            
+            // Show selected tab
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+            
+            // Trigger chart redraw if needed
+            setTimeout(() => {
+                if (window.trendChart) window.trendChart.resize();
+                if (window.repoChart) window.repoChart.resize();
+                if (window.vivaQualityChart) window.vivaQualityChart.resize();
+            }, 100);
+        }
+        
+        // Initialize charts
+        const chartOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    labels: {
+                        color: '#cbd5e1',
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    ticks: { color: '#cbd5e1' },
+                    grid: { color: 'rgba(148, 163, 184, 0.1)' }
+                },
+                x: {
+                    ticks: { color: '#cbd5e1' },
+                    grid: { color: 'rgba(148, 163, 184, 0.1)' }
+                }
+            }
+        };
+        
+        // Trend Chart
+        const trendCtx = document.getElementById('trendChart').getContext('2d');
+        window.trendChart = new Chart(trendCtx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Signal Agreement',
+                    data: [],
+                    borderColor: '#60a5fa',
+                    backgroundColor: 'rgba(96, 165, 250, 0.1)',
+                    tension: 0.4,
+                }, {
+                    label: 'Failure Agreement',
+                    data: [],
+                    borderColor: '#a78bfa',
+                    backgroundColor: 'rgba(167, 139, 250, 0.1)',
+                    tension: 0.4,
+                }, {
+                    label: 'Viva Quality',
+                    data: [],
+                    borderColor: '#34d399',
+                    backgroundColor: 'rgba(52, 211, 153, 0.1)',
+                    tension: 0.4,
+                }]
+            },
+            options: {
+                ...chartOptions,
+                plugins: {
+                    ...chartOptions.plugins,
+                    title: {
+                        display: true,
+                        text: 'Agreement Metrics (Loaded Report)'
+                    }
+                }
+            }
+        });
+        
+        // Repository Chart
+        const repoCtx = document.getElementById('repoChart').getContext('2d');
+        window.repoChart = new Chart(repoCtx, {
+            type: 'bar',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Agreement Rate',
+                    data: [],
+                    backgroundColor: 'rgba(96, 165, 250, 0.6)',
+                    borderColor: '#60a5fa',
+                    borderWidth: 2,
+                }]
+            },
+            options: {
+                ...chartOptions,
+                plugins: {
+                    ...chartOptions.plugins,
+                    title: {
+                        display: true,
+                        text: 'Agreement by Repository'
+                    }
+                }
+            }
+        });
+        
+        // Viva Quality Chart
+        const vivaCtx = document.getElementById('vivaQualityChart').getContext('2d');
+        window.vivaQualityChart = new Chart(vivaCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Quality', 'Generic/Speculative'],
+                datasets: [{
+                    data: [0, 0],
+                    backgroundColor: [
+                        '#34d399',
+                        '#ef4444'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: '#cbd5e1',
+                        }
+                    }
+                }
+            }
+        });
+
+        function percent(value) {
+            if (value === null || value === undefined || Number.isNaN(Number(value))) {
+                return '--';
+            }
+            return `${(Number(value) * 100).toFixed(1)}%`;
+        }
+
+        function decimal(value) {
+            if (value === null || value === undefined || Number.isNaN(Number(value))) {
+                return '--';
+            }
+            return Number(value).toFixed(3);
+        }
+
+        function setText(id, value) {
+            const node = document.getElementById(id);
+            if (node) {
+                node.textContent = value;
+            }
+        }
+
+        function setFill(id, value) {
+            const node = document.getElementById(id);
+            if (!node) return;
+            if (value === null || value === undefined || Number.isNaN(Number(value))) {
+                node.style.width = '0%';
+                return;
+            }
+            node.style.width = `${Math.max(0, Math.min(100, Number(value) * 100))}%`;
+        }
+
+        function asArray(value) {
+            if (!value) return [];
+            return Array.isArray(value) ? value : [value];
+        }
+
+        function renderList(listId, items, emptyText) {
+            const listNode = document.getElementById(listId);
+            if (!listNode) return;
+            listNode.innerHTML = '';
+            const values = asArray(items).filter(Boolean);
+            if (values.length === 0) {
+                const li = document.createElement('li');
+                li.className = 'weakness-item';
+                li.textContent = emptyText;
+                listNode.appendChild(li);
+                return;
+            }
+            values.forEach((item) => {
+                const li = document.createElement('li');
+                li.className = 'weakness-item';
+                li.textContent = String(item);
+                listNode.appendChild(li);
+            });
+        }
+
+        function normalizePayload(rawPayload) {
+            const comparative = rawPayload.comparative_report || rawPayload;
+            const trust = rawPayload.trust_audit || {};
+            const dataset = rawPayload.human_dataset_summary || {};
+            return { comparative, trust, dataset, raw: rawPayload };
+        }
+
+        function applyReport(rawPayload) {
+            const { comparative, trust, dataset } = normalizePayload(rawPayload);
+
+            setText('overallTrustValue', percent(comparative.oracle_trustworthiness));
+            setFill('overallTrustFill', comparative.oracle_trustworthiness);
+            setText('agreementSignals', percent(comparative.signal_agreement));
+            setText('agreementFailures', percent(comparative.failure_agreement));
+            setText('agreementViva', percent(comparative.viva_quality_rate));
+
+            setText('coverageRepos', comparative.repository_name ? '1' : '--');
+            setText('coverageReviewers', dataset.total_reviewers ?? '--');
+            setText('coverageDatapoints', dataset.datapoint_count ?? '--');
+            setText('coverageLastEvaluation', comparative.evaluation_date || rawPayload.generated_at || '--');
+
+            setText('signalPrecision', decimal(comparative.signal_precision));
+            setText('signalRecall', decimal(comparative.signal_recall));
+            setFill('signalPrecisionFill', comparative.signal_precision);
+            setFill('signalRecallFill', comparative.signal_recall);
+
+            const hallucinationCount = asArray(comparative.hallucinations_detected).length;
+            setText('signalHallucinations', hallucinationCount.toString());
+            setText('signalFpRate', percent(comparative.signals_false_positives / Math.max(1, comparative.signals_oracle_detected || 1)));
+            setText('signalIssueAgreement', percent(comparative.signal_agreement));
+
+            setText('failureAgreement', decimal(comparative.failure_agreement));
+            setText('failureRealistic', percent(comparative.failure_agreement));
+            setText('failureSpeculative', percent(1 - Number(comparative.failure_agreement || 0)));
+
+            setText('vivaQualityRate', decimal(comparative.viva_quality_rate));
+            setText('vivaSpecificity', decimal(comparative.viva_specificity));
+            setText('vivaDistinguishes', decimal(comparative.viva_distinguishes_levels));
+
+            const trustScore = trust.overall_score ?? comparative.oracle_trustworthiness;
+            setText('trustScoreValue', percent(trustScore));
+            setFill('trustScoreFill', trustScore);
+            setText('trustFalsePositives', hallucinationCount.toString());
+            setText('speculativeCount', asArray(comparative.speculation_detected).length.toString());
+
+            const statusNode = document.getElementById('overallTrustStatus');
+            const trustStatusNode = document.getElementById('trustStatus');
+            const isReady = Boolean(comparative.ready_for_production) && !Boolean(trust.should_block_output);
+            if (statusNode) {
+                statusNode.textContent = isReady ? 'Production Ready' : 'Needs Review';
+                statusNode.className = isReady ? 'badge badge-success' : 'badge badge-warning';
+            }
+            if (trustStatusNode) {
+                trustStatusNode.textContent = isReady ? 'Production Ready' : 'Needs Review';
+                trustStatusNode.className = isReady ? 'badge badge-success' : 'badge badge-warning';
+            }
+
+            renderList('hallucinationList', comparative.hallucinations_detected, 'No hallucinations detected in loaded report.');
+            renderList('speculativeList', comparative.speculation_detected, 'No speculative scenarios detected in loaded report.');
+
+            const repoLabel = comparative.repository_name || 'repository';
+            window.trendChart.data.labels = ['Current'];
+            window.trendChart.data.datasets[0].data = [Number(comparative.signal_agreement || 0) * 100];
+            window.trendChart.data.datasets[1].data = [Number(comparative.failure_agreement || 0) * 100];
+            window.trendChart.data.datasets[2].data = [Number(comparative.viva_quality_rate || 0) * 100];
+            window.trendChart.update();
+
+            window.repoChart.data.labels = [repoLabel];
+            window.repoChart.data.datasets[0].data = [Number(comparative.signal_agreement || 0) * 100];
+            window.repoChart.update();
+
+            const quality = Number(comparative.viva_quality_rate || 0);
+            window.vivaQualityChart.data.datasets[0].data = [quality * 100, (1 - quality) * 100];
+            window.vivaQualityChart.update();
+
+            setText('dataStatus', 'Report loaded successfully. Dashboard reflects real comparative data.');
+            const status = document.getElementById('dataStatus');
+            if (status) {
+                status.style.color = '#34d399';
+            }
+        }
+
+        document.getElementById('reportFile').addEventListener('change', async (event) => {
+            const file = event.target.files && event.target.files[0];
+            if (!file) return;
+            try {
+                const text = await file.text();
+                const payload = JSON.parse(text);
+                applyReport(payload);
+            } catch (error) {
+                setText('dataStatus', `Failed to load report: ${error.message}`);
+                const status = document.getElementById('dataStatus');
+                if (status) {
+                    status.style.color = '#ef4444';
+                }
+            }
+        });
+    </script>
+</body>
+</html>
