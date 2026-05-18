@@ -1,0 +1,59 @@
+{
+  "candidate_id": "memorizer_alex",
+  "session_id": "memorizer_session_001",
+  "overall_reasoning_depth": "guesser",
+  "overall_understanding_score": 0.0,
+  "overall_memorization_score": 1.0,
+  "builder_confidence": 0.0,
+  "builder_vs_memorizer_ratio": 0.0,
+  "response_count": 3,
+  "verdict": "Uncertain understanding. Responses suggest guessing or lack of engagement. Cannot confidently assess builder status.",
+  "certainty": "low",
+  "strong_indicators": [],
+  "weak_indicators": [
+    "textbook_language"
+  ],
+  "red_flags": [],
+  "response_assessments": [
+    {
+      "question_id": "q_001",
+      "reasoning_depth": "guesser",
+      "reasoning_depth_score": 0.05000000000000002,
+      "understanding_confidence": 0.0,
+      "memorization_likelihood": 1.0,
+      "understanding_indicators": [],
+      "memorization_indicators": [
+        "textbook_language"
+      ],
+      "explanation": "Unclear understanding or guessing. Response quality: 5.0%. Would need follow-up questions to clarify.",
+      "recommended_follow_up": "Can you walk through the code flow step-by-step? Where does the critical logic happen?"
+    },
+    {
+      "question_id": "q_002",
+      "reasoning_depth": "guesser",
+      "reasoning_depth_score": 0.05000000000000002,
+      "understanding_confidence": 0.0,
+      "memorization_likelihood": 1.0,
+      "understanding_indicators": [],
+      "memorization_indicators": [
+        "textbook_language"
+      ],
+      "explanation": "Unclear understanding or guessing. Response quality: 5.0%. Would need follow-up questions to clarify.",
+      "recommended_follow_up": "Can you walk through the code flow step-by-step? Where does the critical logic happen?"
+    },
+    {
+      "question_id": "q_003",
+      "reasoning_depth": "guesser",
+      "reasoning_depth_score": 0.05000000000000002,
+      "understanding_confidence": 0.0,
+      "memorization_likelihood": 1.0,
+      "understanding_indicators": [],
+      "memorization_indicators": [
+        "textbook_language"
+      ],
+      "explanation": "Unclear understanding or guessing. Response quality: 5.0%. Would need follow-up questions to clarify.",
+      "recommended_follow_up": "Can you walk through the code flow step-by-step? Where does the critical logic happen?"
+    }
+  ],
+  "timestamp": "2026-05-18T14-57-17.557287"
+}

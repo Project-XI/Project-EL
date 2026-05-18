@@ -1,0 +1,65 @@
+{
+  "candidate_id": "builder_sarah",
+  "session_id": "builder_session_001",
+  "overall_reasoning_depth": "practiced_builder",
+  "overall_understanding_score": 1.0,
+  "overall_memorization_score": 0.0,
+  "builder_confidence": 1.0,
+  "builder_vs_memorizer_ratio": 1.0,
+  "response_count": 3,
+  "verdict": "Likely builder. Shows solid understanding and can explain reasoning, but answers sound somewhat rehearsed. May be reviewing before interview.",
+  "certainty": "high",
+  "strong_indicators": [
+    "cites_specific",
+    "explains_rationale",
+    "integrates_context"
+  ],
+  "weak_indicators": [],
+  "red_flags": [],
+  "response_assessments": [
+    {
+      "question_id": "q_001",
+      "reasoning_depth": "deep_builder",
+      "reasoning_depth_score": 1.0,
+      "understanding_confidence": 1.0,
+      "memorization_likelihood": 0.0,
+      "understanding_indicators": [
+        "explains_rationale",
+        "mentions_tradeoffs",
+        "cites_specific"
+      ],
+      "memorization_indicators": [],
+      "explanation": "Strong understanding evident. Response shows 3 understanding indicators (explains reasoning, mentions tradeoffs, handles edge cases). No memorization signals detected.",
+      "recommended_follow_up": null
+    },
+    {
+      "question_id": "q_002",
+      "reasoning_depth": "informed_learner",
+      "reasoning_depth_score": 0.5,
+      "understanding_confidence": 1.0,
+      "memorization_likelihood": 0.0,
+      "understanding_indicators": [
+        "explains_rationale",
+        "mentions_tradeoffs",
+        "cites_specific"
+      ],
+      "memorization_indicators": [],
+      "explanation": "Solid knowledge but possibly from learning/documentation rather than building. Shows understanding (3 indicators) but answers somewhat generic.",
+      "recommended_follow_up": "What edge case or failure scenario wasn't obvious until you started implementing?"
+    },
+    {
+      "question_id": "q_003",
+      "reasoning_depth": "practiced_builder",
+      "reasoning_depth_score": 1.0,
+      "understanding_confidence": 1.0,
+      "memorization_likelihood": 0.0,
+      "understanding_indicators": [
+        "integrates_context"
+      ],
+      "memorization_indicators": [],
+      "explanation": "Good understanding with articulate explanation. Found 1 understanding indicators. Answer sounds rehearsed but reasoning is solid.",
+      "recommended_follow_up": "Walk us through a failure scenario - what goes wrong first, and why?"
+    }
+  ],
+  "timestamp": "2026-05-18T14-57-17.556797"
+}

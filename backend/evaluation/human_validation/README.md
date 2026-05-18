@@ -212,6 +212,38 @@ Orchestrates comparison between ORACLE and human reviewers.
   - Flags weak reasoning
   - Generates comprehensive trust score
 
+### 5. Dataset Storage (`datasets.py`)
+
+Stores and loads structured human review data without inventing values.
+
+- `HumanReviewDataset` JSON for bundled corpora
+- `HumanReviewDatapoint` JSONL for append-friendly exports
+- Source manifests for PR reviews, interviews, maintainer feedback, and architecture reviews
+
+### 6. Trust Audit Pipeline (`trust_audit.py`)
+
+Deterministically flags weak reasoning before outputs are surfaced:
+
+- Unsupported assumptions
+- Speculative reasoning
+- Generic viva phrasing
+- Contradictory evidence
+- Stale execution graphs
+- Confidence misuse
+
+### 7. Comparative Calibration Runner (`comparative_calibration_runner.py`)
+
+Runs the full human-comparison flow from disk-backed inputs.
+
+```bash
+python -m evaluation.human_validation.comparative_calibration_runner \
+    --repository-name Project-EL \
+    --oracle-analysis path/to/oracle_analysis.json \
+    --human-dataset path/to/human_reviews.json
+```
+
+The runner writes a report to `evaluation/human_validation/results/`.
+
 **Usage:**
 
 ```python
@@ -368,17 +400,16 @@ oracle_output = {
 ### Step 3: Run Comparative Evaluation
 
 ```python
-from human_validation.comparative_evaluator import ComparativeEvaluationRunner
+from human_validation.comparative_calibration_runner import ComparativeCalibrationRunner
 
-runner = ComparativeEvaluationRunner()
-metrics = runner.run_comparative_evaluation(
+runner = ComparativeCalibrationRunner()
+report_path = runner.run_from_paths(
     repository_name="Project-EL",
-    oracle_analysis=oracle_output,
-    human_evaluation_dataset=human_datapoints,
+    oracle_analysis_path="path/to/oracle_analysis.json",
+    dataset_paths=["path/to/human_reviews.json"],
 )
 
-print(f"Trust Score: {metrics.oracle_trustworthiness:.1%}")
-print(f"Ready for Production: {metrics.ready_for_production}")
+print(f"Saved comparative calibration report to: {report_path}")
 ```
 
 ### Step 4: Check Dashboard
@@ -410,6 +441,13 @@ This framework maintains ORACLE's evidence-grounded principles:
 - Tied to actual code evidence
 - Explainable and deterministic
 - Come from pre-existing datasets
+
+## Data Conventions
+
+- Store real human review exports as `HumanReviewDataset` JSON.
+- Store append-only comparisons as `HumanReviewDatapoint` JSONL.
+- Use `datasets.py` to export a source manifest before evaluation runs.
+- Do not fabricate agreement scores, trust scores, or reviewer responses.
 
 ## Expected Improvements Over Phase 2
 

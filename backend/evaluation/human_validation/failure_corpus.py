@@ -15,9 +15,10 @@ from typing import List, Dict, Any, Optional
 from pydantic import BaseModel, Field
 from dataclasses import dataclass
 from datetime import datetime
+from enum import Enum
 
 
-class FailureCorpusCategory(str):
+class FailureCorpusCategory(str, Enum):
     """Categories of failure modes in corpus"""
     RETRY_LOGIC = "broken_retry_logic"
     AUTH_MIDDLEWARE = "disconnected_auth_middleware"
@@ -59,7 +60,7 @@ class FailureCorpusRepository(BaseModel):
     expected_viva_targets: List[Dict[str, Any]] = []  # What should be questioned
     
     # Adversarial challenges
-    adversarial_challenges: List[Dict[str, str]] = []  # Ways ORACLE might get confused
+    adversarial_challenges: List[str] = []  # Ways ORACLE might get confused
     hallucination_risks: List[str] = []  # What ORACLE might wrongly detect?
     edge_cases: List[str] = []  # Subtle cases that are hard to spot
     
@@ -526,6 +527,251 @@ STATE_CONSISTENCY_VIOLATION = FailureCorpusRepository(
     ],
 )
 
+# Additional failure modes from expanded corpus
+
+RETRY_EXHAUSTION_WITHOUT_BACKOFF = FailureCorpusRepository(
+    id="corpus_retry_exhaustion",
+    name="Retry Exhaustion Without Exponential Backoff",
+    category=FailureCorpusCategory.RETRY_LOGIC,
+    description="Retry logic retries immediately in tight loop without backoff, exhausting downstream resources",
+    
+    framework="FastAPI",
+    async_patterns=True,
+    external_services=["PostgreSQL", "Redis"],
+    
+    problems=[
+        "Retry attempts made immediately without delay",
+        "No exponential backoff multiplier",
+        "Retry count limit too high (100+)",
+        "Upstream service gets hammered during outage",
+    ],
+    problem_severity="HIGH",
+    problem_likelihood_in_production=0.85,
+    
+    expected_signals=[
+        {"name": "tight_retry_loop", "confidence": 0.9},
+        {"name": "missing_backoff_strategy", "confidence": 0.85},
+        {"name": "high_retry_attempt_count", "confidence": 0.8},
+    ],
+    
+    expected_failure_scenarios=[
+        {"name": "connection_pool_exhaustion", "severity": "HIGH"},
+        {"name": "cascading_timeout_storm", "severity": "CRITICAL"},
+        {"name": "load_spike_on_upstream", "severity": "HIGH"},
+    ],
+    
+    expected_viva_targets=[
+        {"question": "How does your retry mechanism handle exponential backoff?"},
+        {"question": "What's the maximum retry count and total timeout you enforce?"},
+        {"question": "Have you tested retry behavior under database outage?"},
+    ],
+    
+    hallucination_risks=[],
+    edge_cases=[
+        "What if backoff exceeds total timeout?",
+        "Circuit breaker vs retry backoff interaction",
+    ],
+    test_code_locations=[
+        "services/database_client.py:execute_with_retry()",
+        "handlers/retry_policy.py:apply_retry()",
+    ],
+)
+
+STALE_CACHE_WITHOUT_TTL = FailureCorpusRepository(
+    id="corpus_stale_cache",
+    name="Stale Cache Without TTL or Invalidation",
+    category=FailureCorpusCategory.CACHE_LOGIC,
+    description="Cache entries remain indefinitely without TTL or invalidation mechanism",
+    
+    framework="FastAPI",
+    async_patterns=False,
+    external_services=["Redis"],
+    
+    problems=[
+        "Cache entries have no TTL (time to live)",
+        "No invalidation mechanism when source data changes",
+        "Manual cache clear operations are inconsistent",
+        "No versioning of cached data",
+    ],
+    problem_severity="HIGH",
+    problem_likelihood_in_production=0.8,
+    
+    expected_signals=[
+        {"name": "cache_without_ttl", "confidence": 0.9},
+        {"name": "missing_cache_invalidation", "confidence": 0.85},
+        {"name": "unbounded_cache_lifetime", "confidence": 0.8},
+    ],
+    
+    expected_failure_scenarios=[
+        {"name": "stale_user_profile", "severity": "MEDIUM"},
+        {"name": "permission_divergence", "severity": "HIGH"},
+        {"name": "config_change_not_propagated", "severity": "HIGH"},
+    ],
+    
+    expected_viva_targets=[
+        {"question": "What's your cache TTL strategy and how is it enforced?"},
+        {"question": "How do you handle cache invalidation on source data changes?"},
+        {"question": "What's your plan if cache and database diverge?"},
+    ],
+    
+    hallucination_risks=[],
+    edge_cases=[
+        "TTL too short causes cache thrashing",
+        "TTL too long causes stale data",
+    ],
+    test_code_locations=[
+        "services/cache_layer.py:get_cached()",
+        "services/cache_layer.py:set_cached()",
+    ],
+)
+
+SILENT_EXCEPTION_IN_BACKGROUND_TASK = FailureCorpusRepository(
+    id="corpus_silent_exception",
+    name="Silent Exception Swallowing in Background Task",
+    category=FailureCorpusCategory.ERROR_PROPAGATION,
+    description="Background task exceptions are caught and swallowed without logging or alerting",
+    
+    framework="FastAPI",
+    async_patterns=True,
+    external_services=["RabbitMQ"],
+    
+    problems=[
+        "Background tasks have broad exception handlers",
+        "Exceptions logged at debug level (never read)",
+        "No alert on task failure",
+        "No dead-letter queue for failed messages",
+        "Task failure doesn't propagate to monitoring",
+    ],
+    problem_severity="CRITICAL",
+    problem_likelihood_in_production=0.9,
+    
+    expected_signals=[
+        {"name": "broad_exception_handler", "confidence": 0.85},
+        {"name": "no_error_alerting", "confidence": 0.8},
+        {"name": "no_dead_letter_queue", "confidence": 0.75},
+    ],
+    
+    expected_failure_scenarios=[
+        {"name": "silent_email_failure", "severity": "CRITICAL"},
+        {"name": "lost_notifications", "severity": "CRITICAL"},
+        {"name": "unrecorded_billing", "severity": "CRITICAL"},
+    ],
+    
+    expected_viva_targets=[
+        {"question": "How do you monitor background task failures?"},
+        {"question": "What happens when a task fails - is it retried or logged?"},
+        {"question": "How would you detect 1000 failed notifications?"},
+    ],
+    
+    hallucination_risks=[],
+    edge_cases=[
+        "Distinguishing transient from permanent failures",
+        "Retry strategy for background tasks",
+    ],
+    test_code_locations=[
+        "background_tasks.py:send_email_task()",
+        "background_tasks.py:process_notification()",
+    ],
+)
+
+BROKEN_MIDDLEWARE_ORDERING = FailureCorpusRepository(
+    id="corpus_middleware_order",
+    name="Broken Middleware Ordering and Execution",
+    category=FailureCorpusCategory.AUTH_MIDDLEWARE,
+    description="Middleware executes in wrong order, causing auth/validation to be skipped or applied out of sequence",
+    
+    framework="FastAPI",
+    async_patterns=False,
+    external_services=[],
+    
+    problems=[
+        "Middleware ordered such that auth runs after business logic",
+        "Validation middleware runs after transformation",
+        "Logging middleware before rate limiting",
+        "Error handling middleware doesn't catch errors from other middleware",
+    ],
+    problem_severity="HIGH",
+    problem_likelihood_in_production=0.75,
+    
+    expected_signals=[
+        {"name": "middleware_execution_order_issue", "confidence": 0.85},
+        {"name": "auth_after_business_logic", "confidence": 0.8},
+        {"name": "validation_order_dependency", "confidence": 0.75},
+    ],
+    
+    expected_failure_scenarios=[
+        {"name": "auth_bypass", "severity": "CRITICAL"},
+        {"name": "invalid_data_accepted", "severity": "HIGH"},
+        {"name": "rate_limit_ineffective", "severity": "MEDIUM"},
+    ],
+    
+    expected_viva_targets=[
+        {"question": "What's your middleware execution order and why?"},
+        {"question": "How do you ensure auth middleware runs before business logic?"},
+        {"question": "Have you documented middleware dependencies?"},
+    ],
+    
+    hallucination_risks=[],
+    edge_cases=[
+        "Conditional middleware execution",
+        "Middleware that modifies request context",
+    ],
+    test_code_locations=[
+        "main.py:app.add_middleware()",
+        "middleware/__init__.py",
+    ],
+)
+
+CASCADING_DEPENDENCY_FAILURE = FailureCorpusRepository(
+    id="corpus_cascading_deps",
+    name="Cascading Dependency Failure Without Circuit Breaker",
+    category=FailureCorpusCategory.CASCADING_FAILURE,
+    description="Service A depends on B, B depends on C; when C fails, B times out, then A gets overwhelmed",
+    
+    framework="FastAPI",
+    async_patterns=True,
+    external_services=["ServiceB", "ServiceC", "PostgreSQL"],
+    
+    problems=[
+        "No circuit breaker between services",
+        "Timeout configured independently per service",
+        "No timeout escalation strategy",
+        "Falling back to stale data not implemented",
+        "Requests queue up waiting for failing downstream service",
+    ],
+    problem_severity="CRITICAL",
+    problem_likelihood_in_production=0.88,
+    
+    expected_signals=[
+        {"name": "cascading_timeout_pattern", "confidence": 0.9},
+        {"name": "no_circuit_breaker", "confidence": 0.85},
+        {"name": "request_queue_backpressure", "confidence": 0.8},
+    ],
+    
+    expected_failure_scenarios=[
+        {"name": "connection_pool_exhaustion", "severity": "CRITICAL"},
+        {"name": "timeout_accumulation", "severity": "CRITICAL"},
+        {"name": "cascading_service_failure", "severity": "CRITICAL"},
+    ],
+    
+    expected_viva_targets=[
+        {"question": "How do you handle cascading failures across dependencies?"},
+        {"question": "What's your circuit breaker strategy?"},
+        {"question": "How do you set timeout values considering dependency chains?"},
+        {"question": "What fallback mechanisms exist when downstream fails?"},
+    ],
+    
+    hallucination_risks=[],
+    edge_cases=[
+        "Partial failure of dependent service",
+        "Degraded mode with partial fallback",
+    ],
+    test_code_locations=[
+        "services/service_client.py:call_service_b()",
+        "services/service_b_client.py:call_service_c()",
+    ],
+)
+
 # Container for all failure corpus repositories
 FAILURE_CORPUS = [
     BROKEN_RETRY_LOGIC,
@@ -538,6 +784,11 @@ FAILURE_CORPUS = [
     WEAK_ERROR_PROPAGATION,
     MISSING_FALLBACK_MECHANISMS,
     STATE_CONSISTENCY_VIOLATION,
+    RETRY_EXHAUSTION_WITHOUT_BACKOFF,
+    STALE_CACHE_WITHOUT_TTL,
+    SILENT_EXCEPTION_IN_BACKGROUND_TASK,
+    BROKEN_MIDDLEWARE_ORDERING,
+    CASCADING_DEPENDENCY_FAILURE,
 ]
 
 def get_corpus_by_category(category: FailureCorpusCategory) -> Optional[FailureCorpusRepository]:

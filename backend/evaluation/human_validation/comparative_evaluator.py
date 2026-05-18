@@ -19,7 +19,7 @@ from datetime import datetime
 from dataclasses import dataclass, asdict
 import logging
 
-from human_evaluator_models import (
+from .human_evaluator_models import (
     ComparativeSignalAnalysis,
     ComparativeFailureAnalysis,
     ComparativeVivaAnalysis,
@@ -36,7 +36,7 @@ from human_evaluator_models import (
     ExecutionGraphFailureTrace,
     OperationalRealism,
 )
-from failure_corpus import FAILURE_CORPUS, FailureCorpusRepository
+from .failure_corpus import FAILURE_CORPUS, FailureCorpusRepository
 
 
 logger = logging.getLogger(__name__)

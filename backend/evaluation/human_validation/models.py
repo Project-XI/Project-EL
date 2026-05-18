@@ -99,10 +99,10 @@ class FailureComparison:
     realism_score: FailureRealism
     production_likelihood: float  # 0.0-1.0 from evaluator's perspective
     reasoning: str
-    code_evidence_cited: Optional[str] = None
     
     # Propagation path assessment
     propagation_path_exists: bool  # Human verified path through code
+    code_evidence_cited: Optional[str] = None
     
     # Agreement metrics
     agreement: bool = field(init=False)
@@ -258,8 +258,8 @@ class HumanEvaluationSession:
     execution_comparisons: List[ExecutionBehaviorComparison] = field(default_factory=list)
     
     # Overall assessment
-    oracle_usefulness: float  # 0.0-1.0, subjective utility
-    oracle_trustworthiness: float  # 0.0-1.0, confidence in findings
+    oracle_usefulness: float = 0.0  # 0.0-1.0, subjective utility
+    oracle_trustworthiness: float = 0.0  # 0.0-1.0, confidence in findings
     overall_reasoning: str = ""
     
     # Metadata
@@ -356,8 +356,8 @@ class ComparativeValidationReport:
     execution_step_accuracy: Optional[float] = None
     
     # Overall trustworthiness
-    oracle_overall_usefulness: float  # Average across evaluators
-    oracle_overall_trustworthiness: float
+    oracle_overall_usefulness: float = 0.0  # Average across evaluators
+    oracle_overall_trustworthiness: float = 0.0
     
     # Issues detected
     hallucination_clusters: List[str] = field(default_factory=list)  # Common false positives

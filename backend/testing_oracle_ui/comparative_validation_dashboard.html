@@ -288,6 +288,11 @@
         <header>
             <h1>🔬 ORACLE Comparative Validation</h1>
             <p class="subtitle">Human vs ORACLE Engineering Intelligence Analysis</p>
+            <div style="margin-top: 16px; display: flex; gap: 12px; justify-content: center; align-items: center; flex-wrap: wrap;">
+                <label for="reportFile" class="badge badge-success" style="cursor: pointer;">Load Comparative Report JSON</label>
+                <input id="reportFile" type="file" accept="application/json" style="display: none;">
+                <span id="dataStatus" style="color: #fbbf24;">No report loaded. Metrics are unavailable.</span>
+            </div>
         </header>
         
         <div class="tabs">
@@ -305,32 +310,32 @@
                 <div class="card">
                     <div class="card-title">📊 Overall Trustworthiness</div>
                     <div style="text-align: center; margin: 20px 0;">
-                        <div style="font-size: 3em; color: #34d399;">82.5%</div>
+                        <div id="overallTrustValue" style="font-size: 3em; color: #34d399;">--</div>
                         <div style="color: #cbd5e1; margin-top: 10px;">Human vs ORACLE Agreement</div>
                     </div>
                     <div class="trust-meter">
-                        <div class="trust-fill" style="width: 82.5%"></div>
+                        <div id="overallTrustFill" class="trust-fill" style="width: 0%"></div>
                     </div>
-                    <div style="margin-top: 10px; color: #cbd5e1;">Status: <span class="badge badge-success">Production Ready</span></div>
+                    <div style="margin-top: 10px; color: #cbd5e1;">Status: <span id="overallTrustStatus" class="badge badge-warning">No Data</span></div>
                 </div>
                 
                 <div class="card">
                     <div class="card-title">📋 Comparative Coverage</div>
                     <div class="metric">
                         <span class="metric-label">Repositories Evaluated</span>
-                        <span class="metric-value">8</span>
+                        <span id="coverageRepos" class="metric-value">--</span>
                     </div>
                     <div class="metric">
                         <span class="metric-label">Human Reviewers</span>
-                        <span class="metric-value">24</span>
+                        <span id="coverageReviewers" class="metric-value">--</span>
                     </div>
                     <div class="metric">
                         <span class="metric-label">Evaluation Datapoints</span>
-                        <span class="metric-value">1,240</span>
+                        <span id="coverageDatapoints" class="metric-value">--</span>
                     </div>
                     <div class="metric">
                         <span class="metric-label">Last Evaluation</span>
-                        <span class="metric-value">2h ago</span>
+                        <span id="coverageLastEvaluation" class="metric-value">--</span>
                     </div>
                 </div>
                 
@@ -338,15 +343,15 @@
                     <div class="card-title">✅ Agreement by Category</div>
                     <div class="metric">
                         <span class="metric-label">Signals</span>
-                        <span class="metric-value">85.2%</span>
+                        <span id="agreementSignals" class="metric-value">--</span>
                     </div>
                     <div class="metric">
                         <span class="metric-label">Failures</span>
-                        <span class="metric-value">78.9%</span>
+                        <span id="agreementFailures" class="metric-value">--</span>
                     </div>
                     <div class="metric">
                         <span class="metric-label">Viva Questions</span>
-                        <span class="metric-value">82.1%</span>
+                        <span id="agreementViva" class="metric-value">--</span>
                     </div>
                 </div>
             </div>
@@ -375,18 +380,18 @@
                     <div class="card-title">🎯 Signal Detection Agreement</div>
                     <div class="metric">
                         <span class="metric-label">Precision (ORACLE vs Human)</span>
-                        <span class="metric-value">0.852</span>
+                        <span id="signalPrecision" class="metric-value">--</span>
                     </div>
                     <div class="metric-bar">
-                        <div class="metric-fill" style="width: 85.2%"></div>
+                        <div id="signalPrecisionFill" class="metric-fill" style="width: 0%"></div>
                     </div>
                     
                     <div class="metric" style="margin-top: 15px;">
                         <span class="metric-label">Recall (ORACLE vs Human)</span>
-                        <span class="metric-value">0.823</span>
+                        <span id="signalRecall" class="metric-value">--</span>
                     </div>
                     <div class="metric-bar">
-                        <div class="metric-fill" style="width: 82.3%"></div>
+                        <div id="signalRecallFill" class="metric-fill" style="width: 0%"></div>
                     </div>
                 </div>
                 
@@ -394,15 +399,15 @@
                     <div class="card-title">📊 False Positive Analysis</div>
                     <div class="metric">
                         <span class="metric-label">Hallucinations Detected</span>
-                        <span class="metric-value warning">3</span>
+                        <span id="signalHallucinations" class="metric-value warning">--</span>
                     </div>
                     <div class="metric">
                         <span class="metric-label">False Positive Rate</span>
-                        <span class="metric-value warning">2.1%</span>
+                        <span id="signalFpRate" class="metric-value warning">--</span>
                     </div>
                     <div class="metric">
                         <span class="metric-label">Human Agreement on Issues</span>
-                        <span class="metric-value">91%</span>
+                        <span id="signalIssueAgreement" class="metric-value">--</span>
                     </div>
                 </div>
                 
@@ -489,15 +494,15 @@
                     <div class="card-title">⚡ Failure Scenario Analysis</div>
                     <div class="metric">
                         <span class="metric-label">Realism Agreement</span>
-                        <span class="metric-value">0.789</span>
+                        <span id="failureAgreement" class="metric-value">--</span>
                     </div>
                     <div class="metric">
                         <span class="metric-label">Realistic Scenarios</span>
-                        <span class="metric-value">89%</span>
+                        <span id="failureRealistic" class="metric-value">--</span>
                     </div>
                     <div class="metric">
                         <span class="metric-label">Speculative Scenarios</span>
-                        <span class="metric-value warning">11%</span>
+                        <span id="failureSpeculative" class="metric-value warning">--</span>
                     </div>
                 </div>
                 
@@ -538,15 +543,15 @@
                     <div class="card-title">🎓 Viva Question Quality</div>
                     <div class="metric">
                         <span class="metric-label">Quality Rate</span>
-                        <span class="metric-value">0.821</span>
+                        <span id="vivaQualityRate" class="metric-value">--</span>
                     </div>
                     <div class="metric">
                         <span class="metric-label">Code Specificity</span>
-                        <span class="metric-value">0.768</span>
+                        <span id="vivaSpecificity" class="metric-value">--</span>
                     </div>
                     <div class="metric">
                         <span class="metric-label">Distinguishes Levels</span>
-                        <span class="metric-value">0.755</span>
+                        <span id="vivaDistinguishes" class="metric-value">--</span>
                     </div>
                 </div>
                 
@@ -623,16 +628,16 @@
                 <div class="card">
                     <div class="card-title">🛡️ Trustworthiness Audit</div>
                     <div style="text-align: center; margin: 20px 0;">
-                        <div style="font-size: 2.5em; color: #34d399;">82.5%</div>
+                        <div id="trustScoreValue" style="font-size: 2.5em; color: #34d399;">--</div>
                         <div style="color: #cbd5e1; margin-top: 10px;">Overall Trust Score</div>
                     </div>
                     <div class="trust-meter">
-                        <div class="trust-fill" style="width: 82.5%"></div>
+                        <div id="trustScoreFill" class="trust-fill" style="width: 0%"></div>
                     </div>
                     <div style="margin-top: 10px;">
                         <div class="metric">
                             <span class="metric-label">Status</span>
-                            <span class="badge badge-success">Production Ready</span>
+                            <span id="trustStatus" class="badge badge-warning">No Data</span>
                         </div>
                     </div>
                 </div>
@@ -662,14 +667,12 @@
                     <div class="card-title">🔍 Hallucination Detection</div>
                     <div class="metric">
                         <span class="metric-label">False Positives Found</span>
-                        <span class="metric-value warning">3</span>
+                        <span id="trustFalsePositives" class="metric-value warning">--</span>
                     </div>
                     <div style="margin-top: 20px;">
                         <strong style="color: #60a5fa;">Hallucinations:</strong>
-                        <ul class="weakness-list">
-                            <li class="weakness-item">Advanced cache pattern (not in code)</li>
-                            <li class="weakness-item">Circuit breaker (not implemented)</li>
-                            <li class="weakness-item">Context propagation (manual only)</li>
+                        <ul id="hallucinationList" class="weakness-list">
+                            <li class="weakness-item">Load a comparative report to see audit findings.</li>
                         </ul>
                     </div>
                 </div>
@@ -678,13 +681,12 @@
                     <div class="card-title">🎯 Speculative Reasoning Detection</div>
                     <div class="metric">
                         <span class="metric-label">Speculative Scenarios</span>
-                        <span class="metric-value warning">2</span>
+                        <span id="speculativeCount" class="metric-value warning">--</span>
                     </div>
                     <div style="margin-top: 20px;">
                         <strong style="color: #60a5fa;">Flagged for Review:</strong>
-                        <ul class="weakness-list">
-                            <li class="weakness-item">DNS resolution timeout (very rare)</li>
-                            <li class="weakness-item">Distributed transaction fail (not applicable)</li>
+                        <ul id="speculativeList" class="weakness-list">
+                            <li class="weakness-item">Load a comparative report to see flagged scenarios.</li>
                         </ul>
                     </div>
                 </div>
@@ -861,22 +863,22 @@
         window.trendChart = new Chart(trendCtx, {
             type: 'line',
             data: {
-                labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5'],
+                labels: [],
                 datasets: [{
                     label: 'Signal Agreement',
-                    data: [78, 80, 82, 84, 85.2],
+                    data: [],
                     borderColor: '#60a5fa',
                     backgroundColor: 'rgba(96, 165, 250, 0.1)',
                     tension: 0.4,
                 }, {
                     label: 'Failure Agreement',
-                    data: [75, 76, 77, 78, 78.9],
+                    data: [],
                     borderColor: '#a78bfa',
                     backgroundColor: 'rgba(167, 139, 250, 0.1)',
                     tension: 0.4,
                 }, {
                     label: 'Viva Quality',
-                    data: [78, 79, 80, 81, 82.1],
+                    data: [],
                     borderColor: '#34d399',
                     backgroundColor: 'rgba(52, 211, 153, 0.1)',
                     tension: 0.4,
@@ -888,7 +890,7 @@
                     ...chartOptions.plugins,
                     title: {
                         display: true,
-                        text: 'Agreement Metrics Over Time'
+                        text: 'Agreement Metrics (Loaded Report)'
                     }
                 }
             }
@@ -899,10 +901,10 @@
         window.repoChart = new Chart(repoCtx, {
             type: 'bar',
             data: {
-                labels: ['FastAPI', 'Django', 'Flask', 'aiohttp', 'Starlette', 'Project-EL', 'Test-Repo', 'Monorepo'],
+                labels: [],
                 datasets: [{
                     label: 'Agreement Rate',
-                    data: [88, 85, 82, 79, 86, 84, 81, 77],
+                    data: [],
                     backgroundColor: 'rgba(96, 165, 250, 0.6)',
                     borderColor: '#60a5fa',
                     borderWidth: 2,
@@ -925,14 +927,11 @@
         window.vivaQualityChart = new Chart(vivaCtx, {
             type: 'doughnut',
             data: {
-                labels: ['Excellent', 'Good', 'Fair', 'Generic', 'Poor'],
+                labels: ['Quality', 'Generic/Speculative'],
                 datasets: [{
-                    data: [45, 28, 11, 12, 4],
+                    data: [0, 0],
                     backgroundColor: [
                         '#34d399',
-                        '#60a5fa',
-                        '#fbbf24',
-                        '#fb923c',
                         '#ef4444'
                     ]
                 }]
@@ -946,6 +945,160 @@
                             color: '#cbd5e1',
                         }
                     }
+                }
+            }
+        });
+
+        function percent(value) {
+            if (value === null || value === undefined || Number.isNaN(Number(value))) {
+                return '--';
+            }
+            return `${(Number(value) * 100).toFixed(1)}%`;
+        }
+
+        function decimal(value) {
+            if (value === null || value === undefined || Number.isNaN(Number(value))) {
+                return '--';
+            }
+            return Number(value).toFixed(3);
+        }
+
+        function setText(id, value) {
+            const node = document.getElementById(id);
+            if (node) {
+                node.textContent = value;
+            }
+        }
+
+        function setFill(id, value) {
+            const node = document.getElementById(id);
+            if (!node) return;
+            if (value === null || value === undefined || Number.isNaN(Number(value))) {
+                node.style.width = '0%';
+                return;
+            }
+            node.style.width = `${Math.max(0, Math.min(100, Number(value) * 100))}%`;
+        }
+
+        function asArray(value) {
+            if (!value) return [];
+            return Array.isArray(value) ? value : [value];
+        }
+
+        function renderList(listId, items, emptyText) {
+            const listNode = document.getElementById(listId);
+            if (!listNode) return;
+            listNode.innerHTML = '';
+            const values = asArray(items).filter(Boolean);
+            if (values.length === 0) {
+                const li = document.createElement('li');
+                li.className = 'weakness-item';
+                li.textContent = emptyText;
+                listNode.appendChild(li);
+                return;
+            }
+            values.forEach((item) => {
+                const li = document.createElement('li');
+                li.className = 'weakness-item';
+                li.textContent = String(item);
+                listNode.appendChild(li);
+            });
+        }
+
+        function normalizePayload(rawPayload) {
+            const comparative = rawPayload.comparative_report || rawPayload;
+            const trust = rawPayload.trust_audit || {};
+            const dataset = rawPayload.human_dataset_summary || {};
+            return { comparative, trust, dataset, raw: rawPayload };
+        }
+
+        function applyReport(rawPayload) {
+            const { comparative, trust, dataset } = normalizePayload(rawPayload);
+
+            setText('overallTrustValue', percent(comparative.oracle_trustworthiness));
+            setFill('overallTrustFill', comparative.oracle_trustworthiness);
+            setText('agreementSignals', percent(comparative.signal_agreement));
+            setText('agreementFailures', percent(comparative.failure_agreement));
+            setText('agreementViva', percent(comparative.viva_quality_rate));
+
+            setText('coverageRepos', comparative.repository_name ? '1' : '--');
+            setText('coverageReviewers', dataset.total_reviewers ?? '--');
+            setText('coverageDatapoints', dataset.datapoint_count ?? '--');
+            setText('coverageLastEvaluation', comparative.evaluation_date || rawPayload.generated_at || '--');
+
+            setText('signalPrecision', decimal(comparative.signal_precision));
+            setText('signalRecall', decimal(comparative.signal_recall));
+            setFill('signalPrecisionFill', comparative.signal_precision);
+            setFill('signalRecallFill', comparative.signal_recall);
+
+            const hallucinationCount = asArray(comparative.hallucinations_detected).length;
+            setText('signalHallucinations', hallucinationCount.toString());
+            setText('signalFpRate', percent(comparative.signals_false_positives / Math.max(1, comparative.signals_oracle_detected || 1)));
+            setText('signalIssueAgreement', percent(comparative.signal_agreement));
+
+            setText('failureAgreement', decimal(comparative.failure_agreement));
+            setText('failureRealistic', percent(comparative.failure_agreement));
+            setText('failureSpeculative', percent(1 - Number(comparative.failure_agreement || 0)));
+
+            setText('vivaQualityRate', decimal(comparative.viva_quality_rate));
+            setText('vivaSpecificity', decimal(comparative.viva_specificity));
+            setText('vivaDistinguishes', decimal(comparative.viva_distinguishes_levels));
+
+            const trustScore = trust.overall_score ?? comparative.oracle_trustworthiness;
+            setText('trustScoreValue', percent(trustScore));
+            setFill('trustScoreFill', trustScore);
+            setText('trustFalsePositives', hallucinationCount.toString());
+            setText('speculativeCount', asArray(comparative.speculation_detected).length.toString());
+
+            const statusNode = document.getElementById('overallTrustStatus');
+            const trustStatusNode = document.getElementById('trustStatus');
+            const isReady = Boolean(comparative.ready_for_production) && !Boolean(trust.should_block_output);
+            if (statusNode) {
+                statusNode.textContent = isReady ? 'Production Ready' : 'Needs Review';
+                statusNode.className = isReady ? 'badge badge-success' : 'badge badge-warning';
+            }
+            if (trustStatusNode) {
+                trustStatusNode.textContent = isReady ? 'Production Ready' : 'Needs Review';
+                trustStatusNode.className = isReady ? 'badge badge-success' : 'badge badge-warning';
+            }
+
+            renderList('hallucinationList', comparative.hallucinations_detected, 'No hallucinations detected in loaded report.');
+            renderList('speculativeList', comparative.speculation_detected, 'No speculative scenarios detected in loaded report.');
+
+            const repoLabel = comparative.repository_name || 'repository';
+            window.trendChart.data.labels = ['Current'];
+            window.trendChart.data.datasets[0].data = [Number(comparative.signal_agreement || 0) * 100];
+            window.trendChart.data.datasets[1].data = [Number(comparative.failure_agreement || 0) * 100];
+            window.trendChart.data.datasets[2].data = [Number(comparative.viva_quality_rate || 0) * 100];
+            window.trendChart.update();
+
+            window.repoChart.data.labels = [repoLabel];
+            window.repoChart.data.datasets[0].data = [Number(comparative.signal_agreement || 0) * 100];
+            window.repoChart.update();
+
+            const quality = Number(comparative.viva_quality_rate || 0);
+            window.vivaQualityChart.data.datasets[0].data = [quality * 100, (1 - quality) * 100];
+            window.vivaQualityChart.update();
+
+            setText('dataStatus', 'Report loaded successfully. Dashboard reflects real comparative data.');
+            const status = document.getElementById('dataStatus');
+            if (status) {
+                status.style.color = '#34d399';
+            }
+        }
+
+        document.getElementById('reportFile').addEventListener('change', async (event) => {
+            const file = event.target.files && event.target.files[0];
+            if (!file) return;
+            try {
+                const text = await file.text();
+                const payload = JSON.parse(text);
+                applyReport(payload);
+            } catch (error) {
+                setText('dataStatus', `Failed to load report: ${error.message}`);
+                const status = document.getElementById('dataStatus');
+                if (status) {
+                    status.style.color = '#ef4444';
                 }
             }
         });

@@ -1,0 +1,134 @@
+{
+  "session_id": "oracle_viva_001",
+  "repository_context": "FastAPI backend service with distributed caching",
+  "questions_count": 5,
+  "responses_count": 3,
+  "avg_response_quality": 0.5333333333333333,
+  "avg_specificity": 0.16527777777777777,
+  "avg_correctness": 0.26666666666666666,
+  "consistency_score": 1.0,
+  "evidence_grounding_rate": 1.0,
+  "questions_are_realistic": true,
+  "questions_target_actual_risks": true,
+  "evaluations_are_fair": true,
+  "believability_score": 0.8047916666666667,
+  "believability_issues": [],
+  "duration_seconds": 0.000217,
+  "questions": [
+    {
+      "question_id": "q_001",
+      "question_text": "How do you handle user list endpoint with nested relationships? What's your strategy for query multiplies linearly with result set size without relationship preloading?",
+      "question_type": "opening",
+      "topic": "scalability",
+      "difficulty": "medium",
+      "evidence_grounded": true,
+      "related_concern": "N+1 Query Pattern in User Batch Processing",
+      "context": "The implementation has: Query multiplies linearly with result set size without relationship preloading",
+      "expected_answers": [
+        "Query multiplies linearly with result set size without relationship preloading",
+        "user list endpoint with nested relationships",
+        "nested database query",
+        "no eager loading",
+        "affects user-service"
+      ]
+    },
+    {
+      "question_id": "q_002",
+      "question_text": "How do you handle distributed cache initialization? What's your strategy for cache warm-up loads entire dataset into memory without pagination or size limits?",
+      "question_type": "opening",
+      "topic": "scalability",
+      "difficulty": "medium",
+      "evidence_grounded": true,
+      "related_concern": "Unbounded Memory Growth in Cache Population",
+      "context": "The implementation has: Cache warm-up loads entire dataset into memory without pagination or size limits",
+      "expected_answers": [
+        "Cache warm-up loads entire dataset into memory without pagination or size limits",
+        "distributed cache initialization",
+        "unbounded memory allocation",
+        "no pagination on bootstrap",
+        "affects cache-service"
+      ]
+    },
+    {
+      "question_id": "q_003",
+      "question_text": "The system interacts with payment-service. How do you handle direct calls to payment gateway without fallback or circuit breaking? What happens when it fails?",
+      "question_type": "opening",
+      "topic": "resilience",
+      "difficulty": "medium",
+      "evidence_grounded": true,
+      "related_concern": "Missing Circuit Breaker on External API Calls",
+      "context": "The implementation has: Direct calls to payment gateway without fallback or circuit breaking",
+      "expected_answers": [
+        "Direct calls to payment gateway without fallback or circuit breaking",
+        "payment processing with external gateway",
+        "external dependency without circuit breaker",
+        "no timeout",
+        "affects payment-service"
+      ]
+    },
+    {
+      "question_id": "q_001_fu1",
+      "question_text": "You mentioned We use exponential backoff with max retries of 5. ... Can you be more specific? What concrete steps would you take?",
+      "question_type": "probing",
+      "topic": "scalability",
+      "difficulty": "hard",
+      "evidence_grounded": true,
+      "related_concern": "N+1 Query Pattern in User Batch Processing",
+      "context": "Follow-up to: How do you handle user list endpoint with nested relationships? What's your strategy for query multiplies linearly with result set size without relationship preloading?",
+      "expected_answers": [
+        "Query multiplies linearly with result set size without relationship preloading",
+        "user list endpoint with nested relationships",
+        "nested database query",
+        "no eager loading",
+        "affects user-service"
+      ]
+    },
+    {
+      "question_id": "q_002_fu1",
+      "question_text": "You mentioned Redis cache has TTL of 5 minutes for user profiles... Can you be more specific? What concrete steps would you take?",
+      "question_type": "probing",
+      "topic": "scalability",
+      "difficulty": "hard",
+      "evidence_grounded": true,
+      "related_concern": "Unbounded Memory Growth in Cache Population",
+      "context": "Follow-up to: How do you handle distributed cache initialization? What's your strategy for cache warm-up loads entire dataset into memory without pagination or size limits?",
+      "expected_answers": [
+        "Cache warm-up loads entire dataset into memory without pagination or size limits",
+        "distributed cache initialization",
+        "unbounded memory allocation",
+        "no pagination on bootstrap",
+        "affects cache-service"
+      ]
+    }
+  ],
+  "responses": [
+    {
+      "question_id": "q_001",
+      "response_text": "We use exponential backoff with max retries of 5. Initial delay is 100ms, multiplied by 1.5x each time. Total timeout is 30 seconds. This prevents overwhelming downstream services during outages.",
+      "quality": "weak",
+      "specificity_score": 0.2,
+      "correctness_score": 0.2,
+      "explanation": "Vague or incomplete (specificity: 20.0%, correctness: 20.0%)",
+      "red_flags": []
+    },
+    {
+      "question_id": "q_002",
+      "response_text": "Redis cache has TTL of 5 minutes for user profiles, 10 minutes for config. We invalidate on update events. Invalidation uses event-driven messaging from the service that owns the data.",
+      "quality": "weak",
+      "specificity_score": 0.13333333333333333,
+      "correctness_score": 0.3,
+      "explanation": "Vague or incomplete (specificity: 13.3%, correctness: 30.0%)",
+      "red_flags": []
+    },
+    {
+      "question_id": "q_003",
+      "response_text": "When the payment gateway is unavailable, we implement circuit breaker pattern with a fallback. After 5 consecutive failures in 10 seconds, we open the circuit and return cached response or reject gracefully.",
+      "quality": "excellent",
+      "specificity_score": 0.1625,
+      "correctness_score": 0.3,
+      "explanation": "Strong, specific answer (specificity: 16.2%, correctness: 30.0%)",
+      "red_flags": []
+    }
+  ],
+  "timestamp": "2026-05-18T14-52-05.106661"
+}
