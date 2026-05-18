@@ -1,6 +1,18 @@
-"""Viva Session Simulation Framework: Adaptive Testing Against Weak/Partial Student Responses
+"""⚠️  DEPRECATED: Viva Session Simulation Framework
 
-This module simulates realistic interview sessions where:
+STATUS: ARCHIVED (May 18, 2026) — Not currently used in production.
+
+This module was designed to simulate student responses for testing.
+However, viva_session_conductor.py now handles all viva session orchestration.
+
+DO NOT USE: Import viva_session_conductor instead.
+
+KEPT FOR: Potential future unit testing of response evaluation logic.
+
+---
+
+Original purpose:
+Simulates realistic interview sessions where:
 - ORACLE generates initial viva questions
 - Simulated student provides weak/partial/contradictory responses
 - ORACLE must generate intelligent follow-up questions
