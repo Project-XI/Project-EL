@@ -27,8 +27,8 @@ from __future__ import annotations
 
 from typing import Set
 
-from vsm.models.session_state import SessionLifecycleStage
-from vsm.session.history import SessionHistory
+from ..models.session_state import SessionLifecycleStage
+from .history import SessionHistory
 
 
 class InvalidTransitionError(Exception):
