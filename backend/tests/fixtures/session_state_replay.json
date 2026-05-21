@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "session_id": "fixture-session",
+  "lifecycle_stage": "active",
+  "next_turn_id": 3,
+  "question_history": [
+    {
+      "turn_id": 1,
+      "question_id": "q-1",
+      "question_text": "Explain your auth flow.",
+      "follow_up_to_turn_id": null
+    },
+    {
+      "turn_id": 2,
+      "question_id": "q-2",
+      "question_text": "Why did you choose JWT?",
+      "follow_up_to_turn_id": 1
+    }
+  ],
+  "response_history": [
+    {
+      "turn_id": 1,
+      "response_text": "JWT was chosen for stateless scaling."
+    },
+    {
+      "turn_id": 2,
+      "response_text": "It matched existing service boundaries."
+    }
+  ],
+  "contradiction_history": [
+    {
+      "turn_id": 2,
+      "detail": "Said no token expiry earlier, later described refresh tokens."
+    }
+  ],
+  "weak_areas": {
+    "security": 2
+  },
+  "coverage_state": {
+    "topics": {
+      "authentication": "covered",
+      "scalability": "partial"
+    }
+  },
+  "follow_up_chains": {
+    "1": [
+      2
+    ]
+  },
+  "transitions": [
+    {
+      "from_stage": "initialized",
+      "to_stage": "active"
+    }
+  ]
+}
