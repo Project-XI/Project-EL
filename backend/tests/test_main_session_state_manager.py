@@ -95,6 +95,13 @@ def test_contradiction_history_retained_across_turns():
     }
 
 
+def test_weak_area_increment_rejects_negative_values():
+    manager = SessionStateManager.create("session-6")
+
+    with pytest.raises(ValueError):
+        manager.update_weak_area("security", increment=-1)
+
+
 def test_fixture_replay_consistency():
     fixture_path = Path(__file__).parent / "fixtures" / "session_state_replay.json"
     payload = fixture_path.read_text()
@@ -117,4 +124,3 @@ def test_fixture_replay_consistency():
         },
     ]
     assert json.loads(payload)["session_id"] == restored.state.session_id
-

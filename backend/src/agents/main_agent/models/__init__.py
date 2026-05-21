@@ -1,4 +1,4 @@
-from .coverage_state import CoverageState
+from .coverage_state import CoverageState, CoverageStatus
 from .session_state import (
     ContradictionEntry,
     SessionLifecycle,
@@ -11,9 +11,9 @@ __all__ = [
     "CandidateResponse",
     "ContradictionEntry",
     "CoverageState",
+    "CoverageStatus",
     "SessionLifecycle",
     "SessionState",
     "SessionTransition",
     "TranscriptEntry",
 ]
-

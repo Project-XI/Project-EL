@@ -1,6 +1,3 @@
-__all__ = ["MainAgent", "SessionStateManager", "SessionStateStorage", "InMemorySessionStateStorage"]
-
-
 def __getattr__(name):
     if name == "MainAgent":
         from .agent import MainAgent
@@ -16,3 +13,6 @@ def __getattr__(name):
         }
         return exports[name]
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+
+__all__ = ["MainAgent", "SessionStateManager", "SessionStateStorage", "InMemorySessionStateStorage"]

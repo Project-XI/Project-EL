@@ -1,8 +1,9 @@
-from typing import Optional
+from typing import Optional, Set, Union
 
 from src.agents.main_agent.models import (
     CandidateResponse,
     ContradictionEntry,
+    CoverageStatus,
     SessionLifecycle,
     SessionState,
     SessionTransition,
@@ -20,6 +21,7 @@ from src.agents.main_agent.session.transitions import validate_transition
 class SessionStateManager:
     def __init__(self, state: SessionState):
         self.state = state
+        self._question_turn_ids: Set[int] = {entry.turn_id for entry in state.question_history}
 
     @classmethod
     def create(cls, session_id: str) -> "SessionStateManager":
@@ -38,9 +40,9 @@ class SessionStateManager:
 
     def transition_to(self, to_stage: SessionLifecycle) -> None:
         from_stage = self.state.lifecycle_stage
-        validate_transition(from_stage, to_stage)
         if from_stage == to_stage:
             return
+        validate_transition(from_stage, to_stage)
         self.state.lifecycle_stage = to_stage
         self.state.transitions.append(SessionTransition(from_stage=from_stage, to_stage=to_stage))
 
@@ -60,13 +62,14 @@ class SessionStateManager:
                 follow_up_to_turn_id=follow_up_to_turn_id,
             )
         )
+        self._question_turn_ids.add(turn_id)
         if follow_up_to_turn_id is not None:
             chain_key = str(follow_up_to_turn_id)
             self.state.follow_up_chains.setdefault(chain_key, []).append(turn_id)
         return turn_id
 
     def record_response(self, turn_id: int, response_text: str) -> None:
-        turn_exists = any(question.turn_id == turn_id for question in self.state.question_history)
+        turn_exists = turn_id in self._question_turn_ids
         if not turn_exists:
             raise ValueError(f"Cannot record response for unknown turn {turn_id}")
         self.state.response_history.append(CandidateResponse(turn_id=turn_id, response_text=response_text))
@@ -75,10 +78,12 @@ class SessionStateManager:
         self.state.contradiction_history.append(ContradictionEntry(turn_id=turn_id, detail=detail))
 
     def update_weak_area(self, topic: str, increment: int = 1) -> None:
+        if increment < 0:
+            raise ValueError("increment must be non-negative")
         self.state.weak_areas[topic] = self.state.weak_areas.get(topic, 0) + increment
 
-    def update_topic_coverage(self, topic: str, status: str) -> None:
-        self.state.coverage_state.topics[topic] = status
+    def update_topic_coverage(self, topic: str, status: Union[CoverageStatus, str]) -> None:
+        self.state.coverage_state.topics[topic] = CoverageStatus(status)
 
     def replay_view(self):
         return build_replay_view(self.state)
@@ -88,4 +93,3 @@ class SessionStateManager:
 
     def save(self, storage: SessionStateStorage) -> None:
         storage.save(self.state.session_id, self.to_json())
-

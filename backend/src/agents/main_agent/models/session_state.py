@@ -1,5 +1,6 @@
 from enum import Enum
 from typing import Dict, List
+
 from pydantic import BaseModel, Field
 
 from .coverage_state import CoverageState
@@ -36,4 +37,3 @@ class SessionState(BaseModel):
     coverage_state: CoverageState = Field(default_factory=CoverageState)
     follow_up_chains: Dict[str, List[int]] = Field(default_factory=dict)
     transitions: List[SessionTransition] = Field(default_factory=list)
-

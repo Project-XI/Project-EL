@@ -23,8 +23,5 @@ ALLOWED_TRANSITIONS: Dict[SessionLifecycle, Set[SessionLifecycle]] = {
 
 
 def validate_transition(from_stage: SessionLifecycle, to_stage: SessionLifecycle) -> None:
-    if from_stage == to_stage:
-        return
     if to_stage not in ALLOWED_TRANSITIONS[from_stage]:
         raise ValueError(f"Invalid session transition from {from_stage} to {to_stage}")
-

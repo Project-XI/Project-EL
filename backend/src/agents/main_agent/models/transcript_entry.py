@@ -1,4 +1,5 @@
 from typing import Optional
+
 from pydantic import BaseModel
 
 
@@ -12,4 +13,3 @@ class TranscriptEntry(BaseModel):
 class CandidateResponse(BaseModel):
     turn_id: int
     response_text: str
-
