@@ -3,6 +3,7 @@ uvicorn
 pydantic
 python-dotenv
 jinja2
+websockets
 # Pytest for testing
 pytest
 pytest-asyncio
