@@ -17,5 +17,6 @@ ENV/
 
 # TWELVE Data
 backend/data/
+backend/backend/data/cloned_repos/
 backend/evaluation/results/
 backend/tests/validation_report.html
