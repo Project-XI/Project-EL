@@ -57,8 +57,8 @@ class TestFaceDetectionService:
         emb1 = generate_embedding(base=0.5)
         emb2 = create_similar_embedding(emb1, 0.92)
         
-        service.verify_identity(emb1, "R001", "Alice")
-        is_valid, alert, similarity = service.verify_identity(emb2, "R002", "Bob")
+        service.verify_identity(emb1, "R001")
+        is_valid, alert, similarity = service.verify_identity(emb2, "R002")
         
         assert is_valid is False
         assert alert is not None
