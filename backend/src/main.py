@@ -19,7 +19,7 @@ app.add_middleware(
 
 class AnalyzeRequest(BaseModel):
     repo_url: str
-    report_path: str = None
+    report_path: Optional[str] = None
     enable_viva: bool = True
     enable_debug: bool = True
     generate_report: bool = False
