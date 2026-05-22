@@ -111,7 +111,7 @@ class FaceDetectionService:
             return False, alert, best_matches[0][1]
 
         self.add_embedding(embedding, roll_number, session_id=session_id)
-        return True, None, 1.0
+        return True, None, 0.0
 
     def get_conflicts_for_roll(self, roll_number: str) -> List[ConflictAlert]:
         return [
