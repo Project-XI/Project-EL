@@ -19,7 +19,7 @@ from typing import Any, Callable, Dict, Optional, Tuple
 # Type aliases
 # ---------------------------------------------------------------------------
 
-Loader = Callable[[str], Dict[str, Any]]
+Loader = Callable[[str], Optional[Dict[str, Any]]]
 Saver  = Callable[[str, Dict[str, Any]], Any]
 
 
