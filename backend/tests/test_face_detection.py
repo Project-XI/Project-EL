@@ -13,11 +13,6 @@ def generate_embedding(base: float = 0.5, noise: float = 0.1) -> List[float]:
     return [base + np.random.randn() * noise for _ in range(512)]
 
 
-def normalize_embedding(embedding: List[float]) -> List[float]:
-    norm = np.linalg.norm(embedding)
-    return (np.array(embedding) / norm).tolist()
-
-
 def create_similar_embedding(base_embedding: List[float], similarity: float) -> List[float]:
     base = np.array(base_embedding)
     target_norm = np.linalg.norm(base)
