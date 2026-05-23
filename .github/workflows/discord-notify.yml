@@ -1,125 +1,163 @@
-name: Discord Commit Notification
+name: Discord Push Notification
 
 on:
   push:
     branches:
-      - main
-      - develop
-      - master
+      - '**'   # Fire on EVERY branch push
 
 jobs:
   notify:
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
 
-      - name: Get commit info
-        id: commit_info
+      - name: Gather commit and branch info
+        id: info
         run: |
-          COMMIT_SHA=${{ github.sha }}
-          COMMIT_MESSAGE=$(git log -1 --format=%B)
-          COMMIT_AUTHOR=$(git log -1 --format=%an)
-          COMMIT_AUTHOR_EMAIL=$(git log -1 --format=%ae)
-          COMMIT_URL=${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}
-          BRANCH_NAME=${GITHUB_REF#refs/heads/}
-          
-          # Get file stats
-          FILES_CHANGED=$(git diff --name-only HEAD~1 HEAD 2>/dev/null | wc -l)
-          INSERTIONS=$(git diff --numstat HEAD~1 HEAD 2>/dev/null | awk '{sum+=$1} END {print sum}')
-          DELETIONS=$(git diff --numstat HEAD~1 HEAD 2>/dev/null | awk '{sum+=$2} END {print sum}')
-          
-          # Get changed files list (max 5)
-          CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD 2>/dev/null | head -5 | sed 's/^/• /')
-          
-          echo "commit_sha=${COMMIT_SHA:0:7}" >> $GITHUB_OUTPUT
-          echo "commit_message<<EOF" >> $GITHUB_OUTPUT
-          echo "$COMMIT_MESSAGE" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          BRANCH_NAME="${GITHUB_REF#refs/heads/}"
+          COMMIT_SHA="${{ github.sha }}"
+          COMMIT_URL="${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}"
+          REPO_URL="${{ github.server_url }}/${{ github.repository }}"
+          PR_URL="${{ github.server_url }}/${{ github.repository }}/compare/${BRANCH_NAME}?expand=1"
 
-          echo "commit_author=$COMMIT_AUTHOR" >> $GITHUB_OUTPUT
-          echo "commit_url=$COMMIT_URL" >> $GITHUB_OUTPUT
-          echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
-          echo "files_changed=$FILES_CHANGED" >> $GITHUB_OUTPUT
-          echo "insertions=${INSERTIONS:-0}" >> $GITHUB_OUTPUT
-          echo "deletions=${DELETIONS:-0}" >> $GITHUB_OUTPUT
-          echo "changed_files<<EOF" >> $GITHUB_OUTPUT
-          echo "$CHANGED_FILES" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          COMMIT_MESSAGE=$(git log -1 --format=%B | head -5)
+          COMMIT_AUTHOR=$(git log -1 --format=%an)
+
+          FILES_CHANGED=$(git diff --name-only HEAD~1 HEAD 2>/dev/null | wc -l | xargs)
+          INSERTIONS=$(git diff --numstat HEAD~1 HEAD 2>/dev/null | awk '{sum+=$1} END {print sum+0}')
+          DELETIONS=$(git diff --numstat HEAD~1 HEAD 2>/dev/null | awk '{sum+=$2} END {print sum+0}')
+          CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD 2>/dev/null | head -6 | sed 's/^/∙ /')
+
+          # Branch-type emoji + color
+          if echo "$BRANCH_NAME" | grep -qE "^(main|master)$"; then
+            BRANCH_EMOJI="🟢"
+            EMBED_COLOR=3066993
+            TITLE_EMOJI="🟢"
+          elif echo "$BRANCH_NAME" | grep -q "^feature/"; then
+            BRANCH_EMOJI="🔵"
+            EMBED_COLOR=3447003
+            TITLE_EMOJI="🚀"
+          elif echo "$BRANCH_NAME" | grep -qE "^(fix|bugfix|hotfix)/"; then
+            BRANCH_EMOJI="🔴"
+            EMBED_COLOR=15158332
+            TITLE_EMOJI="🐛"
+          elif echo "$BRANCH_NAME" | grep -qE "^(chore|docs|refactor)/"; then
+            BRANCH_EMOJI="🟡"
+            EMBED_COLOR=15844367
+            TITLE_EMOJI="🔧"
+          else
+            BRANCH_EMOJI="⚪"
+            EMBED_COLOR=9807270
+            TITLE_EMOJI="📝"
+          fi
+
+          echo "branch_name=$BRANCH_NAME"        >> $GITHUB_OUTPUT
+          echo "commit_sha=${COMMIT_SHA:0:7}"     >> $GITHUB_OUTPUT
+          echo "commit_url=$COMMIT_URL"           >> $GITHUB_OUTPUT
+          echo "repo_url=$REPO_URL"               >> $GITHUB_OUTPUT
+          echo "pr_url=$PR_URL"                   >> $GITHUB_OUTPUT
+          echo "commit_author=$COMMIT_AUTHOR"     >> $GITHUB_OUTPUT
+          echo "files_changed=$FILES_CHANGED"     >> $GITHUB_OUTPUT
+          echo "insertions=$INSERTIONS"           >> $GITHUB_OUTPUT
+          echo "deletions=$DELETIONS"             >> $GITHUB_OUTPUT
+          echo "embed_color=$EMBED_COLOR"         >> $GITHUB_OUTPUT
+          echo "branch_emoji=$BRANCH_EMOJI"       >> $GITHUB_OUTPUT
+          echo "title_emoji=$TITLE_EMOJI"         >> $GITHUB_OUTPUT
+
+          echo "commit_message<<EOF"              >> $GITHUB_OUTPUT
+          echo "$COMMIT_MESSAGE"                  >> $GITHUB_OUTPUT
+          echo "EOF"                              >> $GITHUB_OUTPUT
+
+          echo "changed_files<<EOF"               >> $GITHUB_OUTPUT
+          echo "$CHANGED_FILES"                   >> $GITHUB_OUTPUT
+          echo "EOF"                              >> $GITHUB_OUTPUT
 
       - name: Send Discord notification
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
-          MENTION_USER_ID: ${{ secrets.DISCORD_MENTION_USER_ID }}
-          COMMIT_MESSAGE: ${{ steps.commit_info.outputs.commit_message }}
-          COMMIT_SHA_SHORT: ${{ steps.commit_info.outputs.commit_sha }}
-          COMMIT_URL: ${{ steps.commit_info.outputs.commit_url }}
-          COMMIT_AUTHOR: ${{ steps.commit_info.outputs.commit_author }}
-          BRANCH_NAME: ${{ steps.commit_info.outputs.branch_name }}
-          FILES_CHANGED: ${{ steps.commit_info.outputs.files_changed }}
-          INSERTIONS: ${{ steps.commit_info.outputs.insertions }}
-          DELETIONS: ${{ steps.commit_info.outputs.deletions }}
-          CHANGED_FILES: ${{ steps.commit_info.outputs.changed_files }}
+          MENTION_USER_ID:     ${{ secrets.DISCORD_MENTION_USER_ID }}
+          COMMIT_MESSAGE:      ${{ steps.info.outputs.commit_message }}
+          COMMIT_SHA_SHORT:    ${{ steps.info.outputs.commit_sha }}
+          COMMIT_URL:          ${{ steps.info.outputs.commit_url }}
+          REPO_URL:            ${{ steps.info.outputs.repo_url }}
+          PR_URL:              ${{ steps.info.outputs.pr_url }}
+          COMMIT_AUTHOR:       ${{ steps.info.outputs.commit_author }}
+          BRANCH_NAME:         ${{ steps.info.outputs.branch_name }}
+          FILES_CHANGED:       ${{ steps.info.outputs.files_changed }}
+          INSERTIONS:          ${{ steps.info.outputs.insertions }}
+          DELETIONS:           ${{ steps.info.outputs.deletions }}
+          CHANGED_FILES:       ${{ steps.info.outputs.changed_files }}
+          EMBED_COLOR:         ${{ steps.info.outputs.embed_color }}
+          BRANCH_EMOJI:        ${{ steps.info.outputs.branch_emoji }}
+          TITLE_EMOJI:         ${{ steps.info.outputs.title_emoji }}
         run: |
           TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
-          # Build the embed object directly with jq
           EMBED_JSON=$(jq -n \
-            --arg desc "$COMMIT_MESSAGE" \
-            --arg url "$COMMIT_URL" \
-            --arg c_sha "$COMMIT_SHA_SHORT" \
+            --arg title    "$TITLE_EMOJI Push → $BRANCH_NAME" \
+            --arg desc     "$COMMIT_MESSAGE" \
+            --arg url      "$COMMIT_URL" \
+            --arg c_sha    "$COMMIT_SHA_SHORT" \
             --arg c_author "$COMMIT_AUTHOR" \
-            --arg branch "$BRANCH_NAME" \
-            --arg files_changed "$FILES_CHANGED" \
-            --arg insertions "$INSERTIONS" \
-            --arg deletions "$DELETIONS" \
-            --arg changed_files "$CHANGED_FILES" \
+            --arg branch   "$BRANCH_EMOJI $BRANCH_NAME" \
+            --arg stats    "**Files:** $FILES_CHANGED  **+$INSERTIONS  -$DELETIONS**" \
+            --arg files    "$CHANGED_FILES" \
+            --arg pr_url   "$PR_URL" \
+            --arg repo_url "$REPO_URL" \
+            --argjson color "$EMBED_COLOR" \
+            --arg run_num  "#${{ github.run_number }}" \
             --arg timestamp "$TIMESTAMP" \
             '{
-              "title": "📝 New Commit Pushed (Notify #${{ github.run_number }})",
+              "title":       $title,
               "description": $desc,
-              "url": $url,
-              "color": 3447003,
+              "url":         $url,
+              "color":       $color,
               "fields": [
-                {"name": "🔔 Notify", "value": "#${{ github.run_number }} (attempt ${{ github.run_attempt }})", "inline": true},
-                {"name": "🔗 Commit", "value": "[\($c_sha)](\($url))", "inline": true},
-                {"name": "👤 Author", "value": $c_author, "inline": true},
-                {"name": "🌿 Branch", "value": "`\($branch)`", "inline": true},
-                {"name": "📊 Stats", "value": "**Files:** \($files_changed) | **+\($insertions)** | **-\($deletions)**", "inline": false},
-                {"name": "📄 Changed Files", "value": $changed_files, "inline": false}
+                {"name": "🔗 Commit",        "value": "[`\($c_sha)`](\($url))",           "inline": true},
+                {"name": "👤 Author",        "value": $c_author,                           "inline": true},
+                {"name": "🌿 Branch",        "value": "`\($branch)`",                     "inline": true},
+                {"name": "📊 Changes",       "value": $stats,                              "inline": false},
+                {"name": "📄 Files Changed", "value": $files,                              "inline": false},
+                {"name": "🔀 Open PR",       "value": "[Create Pull Request](\($pr_url))", "inline": true},
+                {"name": "📁 Repository",    "value": "[Project-EL](\($repo_url))",        "inline": true}
               ],
+              "footer": {"text": "Project-EL CI • Run \($run_num)"},
               "timestamp": $timestamp
             }')
 
-          # Build the final payload, adding mention if necessary
           if [ -n "$MENTION_USER_ID" ]; then
             JSON_PAYLOAD=$(jq -n \
-              --arg content "<@$MENTION_USER_ID>" \
+              --arg content "<@$MENTION_USER_ID> new push on **$BRANCH_NAME**" \
               --argjson allowed_mentions "{\"users\":[\"$MENTION_USER_ID\"]}" \
-              --arg username "GitHub Bot" \
+              --arg username   "Project-EL Bot" \
               --arg avatar_url "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" \
               --argjson embed "$EMBED_JSON" \
               '{username: $username, avatar_url: $avatar_url, content: $content, allowed_mentions: $allowed_mentions, embeds: [$embed]}')
           else
             JSON_PAYLOAD=$(jq -n \
-              --arg username "GitHub Bot" \
+              --arg username   "Project-EL Bot" \
               --arg avatar_url "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" \
               --argjson embed "$EMBED_JSON" \
               '{username: $username, avatar_url: $avatar_url, embeds: [$embed]}')
           fi
 
-          # send and capture response
-          RESPONSE=$(curl -s -w "\n%{http_code}" -X POST -H 'Content-type: application/json' --data-raw "$JSON_PAYLOAD" "${{ secrets.DISCORD_WEBHOOK_URL }}")
-          # split body and status
+          RESPONSE=$(curl -s -w "\n%{http_code}" \
+            -X POST \
+            -H 'Content-Type: application/json' \
+            --data-raw "$JSON_PAYLOAD" \
+            "$DISCORD_WEBHOOK_URL")
+
           HTTP_STATUS=$(echo "$RESPONSE" | tail -n1)
           BODY=$(echo "$RESPONSE" | sed '$d')
 
-          echo "Discord response status: $HTTP_STATUS"
-          echo "Discord response body: $BODY"
+          echo "Discord status: $HTTP_STATUS"
+          echo "Discord body:   $BODY"
+
           if [ "$HTTP_STATUS" -ne 204 ] && [ "$HTTP_STATUS" -ne 200 ]; then
-            echo "Webhook failed with status $HTTP_STATUS" >&2
+            echo "::error::Discord webhook failed with HTTP $HTTP_STATUS" >&2
             exit 1
           fi
