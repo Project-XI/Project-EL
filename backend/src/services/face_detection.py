@@ -26,6 +26,9 @@ class ConflictAlert:
     timestamp: datetime
     status: str = "pending_review"
     session_id: Optional[str] = None
+    reviewer_id: Optional[str] = None
+    review_timestamp: Optional[datetime] = None
+    review_reason: Optional[str] = None
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -36,6 +39,9 @@ class ConflictAlert:
             "timestamp": self.timestamp.isoformat(),
             "status": self.status,
             "session_id": self.session_id,
+            "reviewer_id": self.reviewer_id,
+            "review_timestamp": self.review_timestamp.isoformat() if self.review_timestamp else None,
+            "review_reason": self.review_reason,
         }
 
 
@@ -124,10 +130,13 @@ class FaceDetectionService:
     def get_pending_alerts(self) -> List[ConflictAlert]:
         return [alert for alert in self.alerts if alert.status == "pending_review"]
 
-    def resolve_alert(self, conflict_id: str, approved: bool) -> bool:
+    def resolve_alert(self, conflict_id: str, approved: bool, reviewer_id: Optional[str] = None, reason: Optional[str] = None) -> bool:
         for alert in self.alerts:
             if alert.conflict_id == conflict_id:
                 alert.status = "approved" if approved else "rejected"
+                alert.reviewer_id = reviewer_id
+                alert.review_timestamp = datetime.now(timezone.utc)
+                alert.review_reason = reason
                 return True
         return False
 
@@ -148,3 +157,41 @@ class FaceDetectionService:
             if conflict.status == "pending_review":
                 return False, f"Identity under review: conflict {conflict.conflict_id}"
         return True, None
+
+    def get_conflict_details(self, conflict_id: str) -> Optional[Dict[str, Any]]:
+        for alert in self.alerts:
+            if alert.conflict_id == conflict_id:
+                prior_embeddings = []
+                for roll in alert.matched_roll_numbers:
+                    if roll in self.embeddings:
+                        emb = self.embeddings[roll]
+                        prior_embeddings.append({
+                            "roll_number": emb.roll_number,
+                            "student_name": emb.student_name,
+                            "timestamp": emb.timestamp.isoformat(),
+                            "session_id": emb.session_id,
+                        })
+                return {
+                    "conflict": alert.to_dict(),
+                    "prior_embeddings": prior_embeddings,
+                }
+        return None
+
+    def admin_review_conflict(self, conflict_id: str, approved: bool, reviewer_id: str, reason: str) -> bool:
+        for alert in self.alerts:
+            if alert.conflict_id == conflict_id:
+                alert.status = "approved" if approved else "rejected"
+                alert.reviewer_id = reviewer_id
+                alert.review_timestamp = datetime.now(timezone.utc)
+                alert.review_reason = reason
+                return True
+        return False
+
+    def get_override_log(self) -> List[Dict[str, Any]]:
+        return [alert.to_dict() for alert in self.alerts if alert.status in ("approved", "rejected")]
+
+    def get_alert_by_id(self, conflict_id: str) -> Optional[ConflictAlert]:
+        for alert in self.alerts:
+            if alert.conflict_id == conflict_id:
+                return alert
+        return None
