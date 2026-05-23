@@ -14,6 +14,13 @@ class EventType(str, Enum):
     BEHAVIOUR_FLAGGED = "behaviour_flagged"
     SYSTEM_ERROR = "system_error"
     
+    # Face Detection Events
+    FACE_EMBEDDING_COMPARED = "face_embedding.compared"
+    IDENTITY_CONFLICT_DETECTED = "identity_conflict.detected"
+    CONFLICT_ALERT_CREATED = "conflict_alert.created"
+    MANUAL_REVIEW_REQUIRED = "manual_review.required"
+    ACCESS_DENIED_CONFLICT = "access.denied_conflict"
+    
     # ORACLE Events
     FILE_RECEIVED = "file_received"
     PDF_PARSED = "pdf_parsed"
