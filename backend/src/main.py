@@ -1,10 +1,13 @@
+from typing import List, Optional
 from fastapi import FastAPI, BackgroundTasks, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from .core.config import settings
 from .agents.main_agent.agent import MainAgent
+from .services.face_detection import FaceDetectionService
 
 app = FastAPI(title=settings.PROJECT_NAME)
+face_service = FaceDetectionService()
 
 app.add_middleware(
     CORSMiddleware,
@@ -16,10 +19,19 @@ app.add_middleware(
 
 class AnalyzeRequest(BaseModel):
     repo_url: str
-    report_path: str = None # Allow optional document uploads
+    report_path: Optional[str] = None
     enable_viva: bool = True
     enable_debug: bool = True
     generate_report: bool = False
+
+class FaceVerifyRequest(BaseModel):
+    embedding: List[float]
+    roll_number: str
+    session_id: Optional[str] = None
+
+class ResolveAlertRequest(BaseModel):
+    conflict_id: str
+    approved: bool = False
 
 # Initialize the orchestrator and agents
 main_agent = MainAgent()
@@ -32,6 +44,29 @@ class GatekeeperVerifyRequest(BaseModel):
 @app.get("/")
 async def root():
     return {"message": "Welcome to ORACLE API", "status": "operational"}
+
+@app.post("/face/verify")
+async def verify_face(request: FaceVerifyRequest):
+    is_valid, alert, similarity = face_service.verify_identity(
+        embedding=request.embedding,
+        roll_number=request.roll_number,
+        session_id=request.session_id,
+    )
+    
+    return {
+        "is_valid": is_valid,
+        "alert": alert.to_dict() if alert else None,
+        "similarity": similarity,
+    }
+
+@app.get("/face/pending-alerts")
+async def get_pending_alerts():
+    return [alert.to_dict() for alert in face_service.get_pending_alerts()]
+
+@app.post("/face/resolve-alert")
+async def resolve_alert(request: ResolveAlertRequest):
+    success = face_service.resolve_alert(request.conflict_id, request.approved)
+    return {"success": success}
 
 @app.post("/analyze")
 async def analyze_repo(request: AnalyzeRequest):
