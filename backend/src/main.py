@@ -5,9 +5,11 @@ from pydantic import BaseModel
 from .core.config import settings
 from .agents.main_agent.agent import MainAgent
 from .services.face_detection import FaceDetectionService
+from .services.audit_log import AuditLogService
 
 app = FastAPI(title=settings.PROJECT_NAME)
 face_service = FaceDetectionService()
+audit_log = AuditLogService()
 
 app.add_middleware(
     CORSMiddleware,
@@ -98,6 +100,25 @@ async def admin_review_conflict(request: AdminReviewRequest):
 @app.get("/admin/override-log")
 async def get_override_log():
     return face_service.get_override_log()
+
+@app.get("/audit/timeline")
+async def get_audit_timeline(roll_number: Optional[str] = None, session_id: Optional[str] = None):
+    result = []
+    if session_id:
+        result = audit_log.get_session_timeline(session_id)
+    elif roll_number:
+        result = audit_log.get_timeline(roll_number)
+    else:
+        result = audit_log.get_timeline()
+    return result
+
+@app.get("/audit/search")
+async def search_audit_log(query: str):
+    return audit_log.search(query)
+
+@app.get("/audit/events/{event_type}")
+async def get_audit_events_by_type(event_type: str):
+    return audit_log.get_events_by_type(event_type)
 
 @app.post("/analyze")
 async def analyze_repo(request: AnalyzeRequest):
