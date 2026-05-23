@@ -21,8 +21,13 @@ class AnalyzeRequest(BaseModel):
     enable_debug: bool = True
     generate_report: bool = False
 
-# Initialize the main orchestrator agent
+# Initialize the orchestrator and agents
 main_agent = MainAgent()
+gatekeeper_pipeline = main_agent.gatekeeper._pipeline  # Access the global pipeline instance
+
+class GatekeeperVerifyRequest(BaseModel):
+    roll_number: str
+    face_id: str = None
 
 @app.get("/")
 async def root():
@@ -38,6 +43,22 @@ async def analyze_repo(request: AnalyzeRequest):
     except AttributeError:
         data = context.dict()
     return {"status": "success", "data": data}
+
+@app.post("/gatekeeper/verify")
+async def gatekeeper_verify(request: GatekeeperVerifyRequest):
+    """
+    Direct endpoint to run the Gatekeeper verification pipeline.
+    """
+    result = gatekeeper_pipeline.run(request.roll_number, request.face_id)
+    return {"status": "success", "data": result.to_dict()}
+
+@app.get("/gatekeeper/registry")
+async def gatekeeper_registry():
+    """
+    Endpoint to fetch all active registered students.
+    """
+    students = gatekeeper_pipeline._registry.all_active()
+    return {"status": "success", "data": [s.to_dict() for s in students]}
 
 @app.websocket("/ws/analyze")
 async def websocket_analyze(websocket: WebSocket):

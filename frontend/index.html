@@ -8,12 +8,20 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="style.css"/>
+  <!-- Spline 3-D orb viewer -->
+  <script type="module" src="https://unpkg.com/@splinetool/viewer@1.9.82/build/spline-viewer.js"></script>
 </head>
 <body>
 
   <!-- ══ PERMISSION GATE — camera + mic only, no API key ══ -->
   <div id="gate" class="gate">
-    <div class="gate-orb"></div>
+    <div class="gate-orb-wrap">
+      <spline-viewer
+        url="https://prod.spline.design/SyEEh088lrOd36FL/scene.splinecode"
+        class="gate-spline"
+        loading-anim-type="none">
+      </spline-viewer>
+    </div>
     <h1 class="gate-title">Hi, I'm <span>El</span> 👋</h1>
     <p class="gate-sub">Your personal AI Examiner.<br/>I just need your camera &amp; microphone to get started.</p>
     <div class="gate-btns">
@@ -82,9 +90,13 @@
     <div class="chat-scroll" id="chat-scroll">
       <div class="hero" id="hero">
         <div class="hero-orb-wrap">
-          <div class="hero-orb-glow"></div>
-          <div class="hero-orb" id="hero-orb"></div>
-          <div class="hero-orb-ring"></div>
+          <div id="hero-orb" class="hero-spline-wrap">
+            <spline-viewer
+              url="https://prod.spline.design/SyEEh088lrOd36FL/scene.splinecode"
+              class="hero-spline"
+              loading-anim-type="none">
+            </spline-viewer>
+          </div>
         </div>
         <p class="hero-text" id="hero-text"></p>
         <p class="hero-sub hidden" id="hero-sub">Today's examination session is now open.</p>
