@@ -32,6 +32,14 @@ class FaceVerifyRequest(BaseModel):
 class ResolveAlertRequest(BaseModel):
     conflict_id: str
     approved: bool = False
+    reviewer_id: Optional[str] = None
+    reason: Optional[str] = None
+
+class AdminReviewRequest(BaseModel):
+    conflict_id: str
+    approved: bool
+    reviewer_id: str
+    reason: str
 
 # Initialize the main orchestrator agent
 main_agent = MainAgent()
@@ -60,8 +68,36 @@ async def get_pending_alerts():
 
 @app.post("/face/resolve-alert")
 async def resolve_alert(request: ResolveAlertRequest):
-    success = face_service.resolve_alert(request.conflict_id, request.approved)
+    success = face_service.resolve_alert(
+        request.conflict_id, 
+        request.approved,
+        request.reviewer_id,
+        request.reason
+    )
     return {"success": success}
+
+@app.get("/face/conflict/{conflict_id}")
+async def get_conflict_details(conflict_id: str):
+    details = face_service.get_conflict_details(conflict_id)
+    if details is None:
+        return {"error": "Conflict not found"}, 404
+    return details
+
+@app.post("/admin/review-conflict")
+async def admin_review_conflict(request: AdminReviewRequest):
+    success = face_service.admin_review_conflict(
+        request.conflict_id,
+        request.approved,
+        request.reviewer_id,
+        request.reason
+    )
+    if not success:
+        return {"error": "Conflict not found"}, 404
+    return {"success": True, "message": "Review decision recorded"}
+
+@app.get("/admin/override-log")
+async def get_override_log():
+    return face_service.get_override_log()
 
 @app.post("/analyze")
 async def analyze_repo(request: AnalyzeRequest):
