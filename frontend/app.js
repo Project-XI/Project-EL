@@ -469,3 +469,13 @@ window.addEventListener('beforeunload', () => {
   if (audioCtx) audioCtx.close();
   if (stream) stream.getTracks().forEach(t => t.stop());
 });
+
+// ── REMOVE SPLINE LOGO ───────────────────────────────────────────────
+setInterval(() => {
+  document.querySelectorAll('spline-viewer').forEach(viewer => {
+    if (viewer.shadowRoot) {
+      const logo = viewer.shadowRoot.querySelector('#logo');
+      if (logo) logo.remove();
+    }
+  });
+}, 1000);

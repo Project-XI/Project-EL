@@ -1,36 +1,14 @@
 """
 face_verification/__init__.py
 ──────────────────────────────
-Public surface of the GATEKEEPER Face Verification Engine package.
+Public surface of the GATEKEEPER face verification package.
 """
 
-from .models import (
-    FaceCapture,
-    FaceEmbedding,
-    VerificationResult,
-    VerificationStatus,
-    EmbeddingSource,
-)
-from .embedding_engine import (
-    AbstractEmbeddingEngine,
-    StubEmbeddingEngine,
-)
-from .comparator import EmbeddingComparator, SimilarityScore
-from .verification_pipeline import FaceVerificationPipeline
+from .face_result import FaceVerificationResult, FaceMatchStatus
+from .face_verifier import FaceVerifier
 
 __all__ = [
-    # Models
-    "FaceCapture",
-    "FaceEmbedding",
-    "VerificationResult",
-    "VerificationStatus",
-    "EmbeddingSource",
-    # Engine
-    "AbstractEmbeddingEngine",
-    "StubEmbeddingEngine",
-    # Comparator
-    "EmbeddingComparator",
-    "SimilarityScore",
-    # Pipeline
-    "FaceVerificationPipeline",
+    "FaceVerificationResult",
+    "FaceMatchStatus",
+    "FaceVerifier",
 ]
