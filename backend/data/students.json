@@ -1,0 +1,62 @@
+[
+  {
+    "schema_version": "1.0.0",
+    "roll_number": "CS2021001",
+    "full_name": "Aman Koli",
+    "email": "aman.koli@college.edu",
+    "department": "CS",
+    "year": "3",
+    "batch": "A",
+    "program": "B.Tech",
+    "photo_reference": "photos/CS2021001.jpg",
+    "is_active": true
+  },
+  {
+    "schema_version": "1.0.0",
+    "roll_number": "CS2021002",
+    "full_name": "Raj Koli",
+    "email": "raj.koli@college.edu",
+    "department": "CS",
+    "year": "3",
+    "batch": "A",
+    "program": "B.Tech",
+    "photo_reference": "photos/CS2021002.jpg",
+    "is_active": true
+  },
+  {
+    "schema_version": "1.0.0",
+    "roll_number": "IT2022010",
+    "full_name": "Priya Sharma",
+    "email": "priya.sharma@college.edu",
+    "department": "IT",
+    "year": "2",
+    "batch": "B",
+    "program": "B.Tech",
+    "photo_reference": "photos/IT2022010.jpg",
+    "is_active": true
+  },
+  {
+    "schema_version": "1.0.0",
+    "roll_number": "DS2020005",
+    "full_name": "Neha Patel",
+    "email": "neha.patel@college.edu",
+    "department": "DS",
+    "year": "4",
+    "batch": "C",
+    "program": "B.Tech",
+    "photo_reference": "photos/DS2020005.jpg",
+    "is_active": true
+  },
+  {
+    "schema_version": "1.0.0",
+    "roll_number": "AI2023001",
+    "full_name": "Arjun Mehta",
+    "email": "arjun.mehta@college.edu",
+    "department": "AI",
+    "year": "1",
+    "batch": "A",
+    "program": "B.Tech",
+    "photo_reference": null,
+    "is_active": true
+  }
+]

@@ -20,6 +20,7 @@ app.add_middleware(
 class AnalyzeRequest(BaseModel):
     repo_url: str
     report_path: Optional[str] = None
+    roll_number: Optional[str] = None
     enable_viva: bool = True
     enable_debug: bool = True
     generate_report: bool = False
@@ -66,7 +67,7 @@ async def resolve_alert(request: ResolveAlertRequest):
 @app.post("/analyze")
 async def analyze_repo(request: AnalyzeRequest):
     # Legacy REST endpoint for backward compatibility
-    input_data = {"repo_url": request.repo_url, "report_path": request.report_path}
+    input_data = {"repo_url": request.repo_url, "report_path": request.report_path, "roll_number": request.roll_number}
     context = await main_agent.process("api_session", input_data)
     try:
         data = context.model_dump()

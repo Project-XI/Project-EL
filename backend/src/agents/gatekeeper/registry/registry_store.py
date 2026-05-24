@@ -22,7 +22,9 @@ Rules
 
 from __future__ import annotations
 
+import json
 import logging
+import os
 from typing import Dict, Iterator, List, Optional
 
 from .student_schema import (
@@ -56,6 +58,15 @@ class StudentRegistry:
 
     def __init__(self) -> None:
         self._store: Dict[str, StudentProfile] = {}
+        # Attempt to load persistent registry from backend/data/students.json if present
+        try:
+            base = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
+            default_path = os.path.join(base, 'backend', 'data', 'students.json')
+            if os.path.exists(default_path):
+                self.load_from_file(default_path)
+        except Exception:
+            # ignore persistence errors for in-memory fallback
+            pass
 
     # ── Write operations ──────────────────────────────────────────────────────
 
@@ -90,6 +101,50 @@ class StudentRegistry:
         for p in profiles:
             self.upsert(p)
         logger.info("[StudentRegistry] seeded %d student records.", len(profiles))
+        try:
+            # attempt to persist after seeding
+            base = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
+            default_path = os.path.join(base, 'backend', 'data', 'students.json')
+            self.save_to_file(default_path)
+        except Exception:
+            pass
+        return self
+
+    # ── Persistence helpers ─────────────────────────────────────────────────
+    def to_serializable(self) -> List[dict]:
+        return [p.to_dict() for p in self._store.values()]
+
+    def save_to_file(self, path: str) -> None:
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, 'w', encoding='utf-8') as f:
+            json.dump(self.to_serializable(), f, indent=2)
+
+    def load_from_file(self, path: str) -> "StudentRegistry":
+        try:
+            with open(path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            # Expect list of dicts
+            for item in data:
+                try:
+                    # Convert enum strings back to model types via StudentProfile
+                    profile = StudentProfile(
+                        roll_number=item.get('roll_number'),
+                        full_name=item.get('full_name'),
+                        email=item.get('email'),
+                        department=item.get('department'),
+                        year=item.get('year'),
+                        batch=item.get('batch'),
+                        program=item.get('program', 'B.Tech'),
+                        photo_reference=item.get('photo_reference'),
+                        guardian_name=item.get('guardian_name'),
+                        is_active=item.get('is_active', True),
+                    )
+                    self.upsert(profile)
+                except Exception:
+                    continue
+            logger.info("[StudentRegistry] loaded %d records from %s", len(self._store), path)
+        except Exception as e:
+            logger.warning("[StudentRegistry] failed to load from %s: %s", path, e)
         return self
 
     # ── Read operations ───────────────────────────────────────────────────────

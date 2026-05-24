@@ -8,6 +8,7 @@ is allowed to proceed to ORACLE analysis.
 
 from typing import Any, Dict, Optional
 from src.agents.base import BaseAgent
+from src.models.events import EventType
 from .registry.registry_store import StudentRegistry, SAMPLE_STUDENTS
 from .registry.lookup import RegistryLookup, LookupResult, LookupFailureReason
 
@@ -20,7 +21,9 @@ class GatekeeperAgent(BaseAgent):
             self._registry = registry
         else:
             self._registry = StudentRegistry()
-            self._registry.seed(SAMPLE_STUDENTS)
+            # Only seed the sample fixture if the persistent registry is empty
+            if len(self._registry) == 0:
+                self._registry.seed(SAMPLE_STUDENTS)
         self._lookup = RegistryLookup(self._registry)
 
     async def process(
@@ -61,7 +64,7 @@ class GatekeeperAgent(BaseAgent):
                 f"[Gatekeeper] ✅ Student verified: {result.profile.full_name}", "success"
             )
             self.emit_event(
-                session_id, "AGENT_PROGRESS",
+                session_id, EventType.AGENT_PROGRESS,
                 {
                     "agent": "Gatekeeper",
                     "status": "complete",
@@ -83,7 +86,7 @@ class GatekeeperAgent(BaseAgent):
             f"[Gatekeeper] ❌ Rejected: {result.message}", "error"
         )
         self.emit_event(
-            session_id, "AGENT_PROGRESS",
+            session_id, EventType.AGENT_PROGRESS,
             {
                 "agent": "Gatekeeper",
                 "status": "failed",
