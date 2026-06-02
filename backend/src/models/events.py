@@ -21,6 +21,12 @@ class EventType(str, Enum):
     MANUAL_REVIEW_REQUIRED = "manual_review.required"
     ACCESS_DENIED_CONFLICT = "access.denied_conflict"
     
+    # Admin Review Events
+    ADMIN_REVIEW_STARTED = "admin_review.started"
+    ADMIN_REVIEW_APPROVED = "admin_review.approved"
+    ADMIN_REVIEW_REJECTED = "admin_review.rejected"
+    ADMIN_OVERRIDE_ACTION = "admin_override.action"
+    
     # ORACLE Events
     FILE_RECEIVED = "file_received"
     PDF_PARSED = "pdf_parsed"

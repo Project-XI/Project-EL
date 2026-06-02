@@ -33,9 +33,22 @@ class FaceVerifyRequest(BaseModel):
 class ResolveAlertRequest(BaseModel):
     conflict_id: str
     approved: bool = False
+    reviewer_id: Optional[str] = None
+    reason: Optional[str] = None
 
-# Initialize the main orchestrator agent
+class AdminReviewRequest(BaseModel):
+    conflict_id: str
+    approved: bool
+    reviewer_id: str
+    reason: str
+
+# Initialize the orchestrator and agents
 main_agent = MainAgent()
+gatekeeper_pipeline = main_agent.gatekeeper._pipeline  # Access the global pipeline instance
+
+class GatekeeperVerifyRequest(BaseModel):
+    roll_number: str
+    face_id: str = None
 
 @app.get("/")
 async def root():
@@ -61,8 +74,36 @@ async def get_pending_alerts():
 
 @app.post("/face/resolve-alert")
 async def resolve_alert(request: ResolveAlertRequest):
-    success = face_service.resolve_alert(request.conflict_id, request.approved)
+    success = face_service.resolve_alert(
+        request.conflict_id, 
+        request.approved,
+        request.reviewer_id,
+        request.reason
+    )
     return {"success": success}
+
+@app.get("/face/conflict/{conflict_id}")
+async def get_conflict_details(conflict_id: str):
+    details = face_service.get_conflict_details(conflict_id)
+    if details is None:
+        return {"error": "Conflict not found"}, 404
+    return details
+
+@app.post("/admin/review-conflict")
+async def admin_review_conflict(request: AdminReviewRequest):
+    success = face_service.admin_review_conflict(
+        request.conflict_id,
+        request.approved,
+        request.reviewer_id,
+        request.reason
+    )
+    if not success:
+        return {"error": "Conflict not found"}, 404
+    return {"success": True, "message": "Review decision recorded"}
+
+@app.get("/admin/override-log")
+async def get_override_log():
+    return face_service.get_override_log()
 
 @app.post("/analyze")
 async def analyze_repo(request: AnalyzeRequest):
@@ -74,6 +115,22 @@ async def analyze_repo(request: AnalyzeRequest):
     except AttributeError:
         data = context.dict()
     return {"status": "success", "data": data}
+
+@app.post("/gatekeeper/verify")
+async def gatekeeper_verify(request: GatekeeperVerifyRequest):
+    """
+    Direct endpoint to run the Gatekeeper verification pipeline.
+    """
+    result = gatekeeper_pipeline.run(request.roll_number, request.face_id)
+    return {"status": "success", "data": result.to_dict()}
+
+@app.get("/gatekeeper/registry")
+async def gatekeeper_registry():
+    """
+    Endpoint to fetch all active registered students.
+    """
+    students = gatekeeper_pipeline._registry.all_active()
+    return {"status": "success", "data": [s.to_dict() for s in students]}
 
 @app.websocket("/ws/analyze")
 async def websocket_analyze(websocket: WebSocket):

@@ -1,111 +1,56 @@
-"""
-GatekeeperAgent — Identity, Session, and Student Registry gate.
-
-Entry point for all student identity verification in the EL system.
-Consumes the StudentRegistry to validate roll numbers before any session
-is allowed to proceed to ORACLE analysis.
-"""
-
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 from src.agents.base import BaseAgent
 from src.models.events import EventType
-from .registry.registry_store import StudentRegistry, SAMPLE_STUDENTS
-from .registry.lookup import RegistryLookup, LookupResult, LookupFailureReason
+
+from .pipeline.gatekeeper_pipeline import GatekeeperPipeline
 
 
 class GatekeeperAgent(BaseAgent):
-    def __init__(self, registry: Optional[StudentRegistry] = None):
+    def __init__(self):
         super().__init__(name="GatekeeperAgent")
-        # Use injected registry (for testing) or create and seed the default one
-        if registry is not None:
-            self._registry = registry
-        else:
-            self._registry = StudentRegistry()
-            # Only seed the sample fixture if the persistent registry is empty
-            if len(self._registry) == 0:
-                self._registry.seed(SAMPLE_STUDENTS)
-        self._lookup = RegistryLookup(self._registry)
+        # Global pipeline instance so history store persists across requests
+        self._pipeline = GatekeeperPipeline()
 
-    async def process(
-        self,
-        session_id: str,
-        input_data: Dict[str, Any],
-        log_callback=None,
-    ) -> Dict[str, Any]:
+    async def process(self, session_id: str, input_data: Dict[str, Any], log_callback=None) -> Dict[str, Any]:
         """
-        Validate student identity before allowing session to proceed.
-
-        Expected input_data keys:
-          - roll_number (str): Student roll number to verify
-          - [any other session fields passed through]
-
-        Returns input_data enriched with:
-          - gatekeeper_status: "verified" | "rejected"
-          - gatekeeper_reason: failure reason string (if rejected)
-          - student_profile:   plain dict of StudentProfile (if verified)
+        Gatekeeper Identity & Session Agent.
+        Runs the full verification pipeline (Roll + Face + Conflict).
         """
-        async def send_log(msg: str, log_type: str = "info"):
+        async def send_log(msg: str, type: str = "info"):
             if log_callback:
-                await log_callback({"message": msg, "type": log_type})
+                await log_callback({"message": msg, "type": type})
 
-        self.log_info(f"Gatekeeper processing session {session_id}")
-        await send_log("[Gatekeeper] Identity verification started.", "info")
+        self.log_info(f"Gatekeeper running verification for session {session_id}.")
+        await send_log("[Gatekeeper] Starting End-to-End Verification Pipeline...", "info")
+        
+        # ── 1. Extract inputs ─────────────────────────────────────────────────
+        # Typically provided by frontend/client API.
+        raw_roll = input_data.get("roll_number", "")
+        raw_face = input_data.get("face_id", "")
 
-        roll_number: str = input_data.get("roll_number", "")
+        # ── 2. Run Pipeline ───────────────────────────────────────────────────
+        result = self._pipeline.run(raw_roll, raw_face)
 
-        # ── Roll-number lookup ────────────────────────────────────────────────
-        result: LookupResult = self._lookup.by_roll_number(roll_number)
+        # ── 3. Emit Events & Logs ─────────────────────────────────────────────
+        decision = result.access_decision
+        
+        if result.is_admitted:
+            await send_log(f"[Gatekeeper] Identity Verified: {decision.student_name} ({decision.roll_number})", "success")
+            self.emit_event(session_id, EventType.IDENTITY_VERIFIED, {"roll_number": decision.roll_number})
+        else:
+            await send_log(f"[Gatekeeper] Access {decision.decision.value.upper()}: {decision.reasons[0]}", "error")
 
-        if result.success:
-            self.log_info(
-                f"Student verified: {result.profile.full_name} ({result.roll_number})"
-            )
-            await send_log(
-                f"[Gatekeeper] ✅ Student verified: {result.profile.full_name}", "success"
-            )
-            self.emit_event(
-                session_id, EventType.AGENT_PROGRESS,
-                {
-                    "agent": "Gatekeeper",
-                    "status": "complete",
-                    "milestone": f"Identity Verified: {result.roll_number}",
-                },
-            )
-            return {
-                **input_data,
-                "gatekeeper_status": "verified",
-                "gatekeeper_reason": None,
-                "student_profile":   result.profile.to_dict(),
-            }
-
-        # ── Rejection ─────────────────────────────────────────────────────────
-        self.log_info(
-            f"Gatekeeper rejected '{roll_number}': {result.failure_reason} — {result.message}"
-        )
-        await send_log(
-            f"[Gatekeeper] ❌ Rejected: {result.message}", "error"
-        )
-        self.emit_event(
-            session_id, EventType.AGENT_PROGRESS,
-            {
-                "agent": "Gatekeeper",
-                "status": "failed",
-                "milestone": f"Identity Rejected: {result.failure_reason}",
-            },
-        )
-        return {
-            **input_data,
-            "gatekeeper_status": "rejected",
-            "gatekeeper_reason": result.failure_reason.value if result.failure_reason else "unknown",
-            "student_profile":   None,
-        }
-
-    @property
-    def registry(self) -> StudentRegistry:
-        """Expose the registry for direct queries (e.g. batch listing)."""
-        return self._registry
-
-    @property
-    def lookup(self) -> RegistryLookup:
-        """Expose the lookup service for external callers."""
-        return self._lookup
+        self.emit_event(session_id, EventType.AGENT_PROGRESS, {
+            "agent": "Gatekeeper", 
+            "status": "complete", 
+            "milestone": "Pipeline Executed",
+            "decision": decision.decision.value,
+        })
+        
+        # ── 4. Return Output ──────────────────────────────────────────────────
+        # Append pipeline results into the original input_data dictionary so 
+        # Oracle or downstream agents can consume it.
+        output_data = input_data.copy()
+        output_data["gatekeeper_result"] = result.to_dict()
+        
+        return output_data

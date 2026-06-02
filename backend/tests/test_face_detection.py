@@ -107,10 +107,12 @@ class TestFaceDetectionService:
         service.verify_identity(emb1, "R001")
         _, alert, _ = service.verify_identity(emb2, "R002")
         
-        result = service.resolve_alert(alert.conflict_id, approved=True)
+        result = service.resolve_alert(alert.conflict_id, approved=True, reviewer_id="admin-1", reason="test resolution")
         
         assert result is True
         assert alert.status == "approved"
+        assert alert.reviewer_id == "admin-1"
+        assert alert.review_reason == "test resolution"
 
     def test_get_suspicious_identities(self):
         service = FaceDetectionService()
@@ -169,3 +171,93 @@ class TestFaceDetectionService:
         
         assert is_valid is False
         assert len(alert.matched_roll_numbers) >= 1
+
+    def test_get_conflict_details(self):
+        service = FaceDetectionService()
+        emb1 = generate_embedding(base=0.5)
+        emb2 = create_similar_embedding(emb1, 0.92)
+        
+        service.add_embedding(emb1, "R001", "Alice")
+        _, alert, _ = service.verify_identity(emb2, "R002", "session-2")
+        
+        details = service.get_conflict_details(alert.conflict_id)
+        
+        assert details is not None
+        assert "conflict" in details
+        assert "prior_embeddings" in details
+        assert len(details["prior_embeddings"]) == 1
+        assert details["prior_embeddings"][0]["roll_number"] == "R001"
+        assert details["prior_embeddings"][0]["student_name"] == "Alice"
+
+    def test_admin_review_conflict(self):
+        service = FaceDetectionService()
+        emb1 = generate_embedding(base=0.5)
+        emb2 = create_similar_embedding(emb1, 0.92)
+        
+        service.verify_identity(emb1, "R001")
+        _, alert, _ = service.verify_identity(emb2, "R002")
+        
+        result = service.admin_review_conflict(
+            alert.conflict_id,
+            approved=True,
+            reviewer_id="admin-1",
+            reason="Verified as same person"
+        )
+        
+        assert result is True
+        assert alert.status == "approved"
+        assert alert.reviewer_id == "admin-1"
+        assert alert.review_reason == "Verified as same person"
+        assert alert.review_timestamp is not None
+
+    def test_admin_review_rejection(self):
+        service = FaceDetectionService()
+        emb1 = generate_embedding(base=0.5)
+        emb2 = create_similar_embedding(emb1, 0.92)
+        
+        service.verify_identity(emb1, "R001")
+        _, alert, _ = service.verify_identity(emb2, "R002")
+        
+        result = service.admin_review_conflict(
+            alert.conflict_id,
+            approved=False,
+            reviewer_id="admin-2",
+            reason="Different people, access denied"
+        )
+        
+        assert result is True
+        assert alert.status == "rejected"
+        assert alert.reviewer_id == "admin-2"
+
+    def test_get_override_log(self):
+        service = FaceDetectionService()
+        emb1 = generate_embedding(base=0.5)
+        emb2 = create_similar_embedding(emb1, 0.92)
+        emb3 = create_similar_embedding(emb1, 0.90)
+        
+        service.verify_identity(emb1, "R001")
+        _, alert1, _ = service.verify_identity(emb2, "R002")
+        _, alert2, _ = service.verify_identity(emb3, "R003")
+        
+        service.admin_review_conflict(alert1.conflict_id, True, "admin-1", "approved")
+        service.admin_review_conflict(alert2.conflict_id, False, "admin-2", "rejected")
+        
+        override_log = service.get_override_log()
+        
+        assert len(override_log) == 2
+        assert override_log[0]["status"] in ("approved", "rejected")
+        assert override_log[0]["reviewer_id"] == "admin-1"
+
+    def test_get_alert_by_id(self):
+        service = FaceDetectionService()
+        emb1 = generate_embedding(base=0.5)
+        emb2 = create_similar_embedding(emb1, 0.92)
+        
+        service.verify_identity(emb1, "R001")
+        _, alert, _ = service.verify_identity(emb2, "R002")
+        
+        found = service.get_alert_by_id(alert.conflict_id)
+        not_found = service.get_alert_by_id("nonexistent")
+        
+        assert found is alert
+        assert not_found is None
