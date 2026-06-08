@@ -27,3 +27,8 @@ backend/backend/data/cloned_repos/
 backend/cloned_repos/
 backend/evaluation/results/
 backend/tests/validation_report.html
+
+# Ignore all markdown files
+*.md
+!README.md
+!**/README.md

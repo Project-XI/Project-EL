@@ -1,13 +1,17 @@
 from typing import List, Optional
+from datetime import datetime
 from fastapi import FastAPI, BackgroundTasks, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from .core.config import settings
 from .agents.main_agent.agent import MainAgent
 from .services.face_detection import FaceDetectionService
+from .services.exam_session_service import ExamSessionService, SessionTransitionError
+from .models.exam_session import ExamSessionConfig, StudentSubmission
 
 app = FastAPI(title=settings.PROJECT_NAME)
 face_service = FaceDetectionService()
+exam_session_service = ExamSessionService()
 
 app.add_middleware(
     CORSMiddleware,
@@ -20,6 +24,7 @@ app.add_middleware(
 class AnalyzeRequest(BaseModel):
     repo_url: str
     report_path: Optional[str] = None
+    roll_number: Optional[str] = None
     enable_viva: bool = True
     enable_debug: bool = True
     generate_report: bool = False
@@ -32,26 +37,124 @@ class FaceVerifyRequest(BaseModel):
 class ResolveAlertRequest(BaseModel):
     conflict_id: str
     approved: bool = False
-    reviewer_id: Optional[str] = None
-    reason: Optional[str] = None
 
-class AdminReviewRequest(BaseModel):
-    conflict_id: str
-    approved: bool
-    reviewer_id: str
-    reason: str
 
-# Initialize the orchestrator and agents
-main_agent = MainAgent()
-gatekeeper_pipeline = main_agent.gatekeeper._pipeline  # Access the global pipeline instance
+class ExamSessionCreateRequest(BaseModel):
+    admin_id: str
+    title: str
+    config: Optional[ExamSessionConfig] = None
 
-class GatekeeperVerifyRequest(BaseModel):
+
+class ExamSessionAssignRequest(BaseModel):
+    submissions: List[StudentSubmission]
+
+
+class ExamSessionRollNumberRequest(BaseModel):
     roll_number: str
-    face_id: str = None
+
+
+class ExamSessionConfigureRequest(BaseModel):
+    config: ExamSessionConfig
+
+# Initialize the main orchestrator agent
+main_agent = MainAgent()
 
 @app.get("/")
 async def root():
-    return {"message": "Welcome to ORACLE API", "status": "operational"}
+    return {"message": "Welcome to ORACLE Viva API", "status": "operational"}
+
+
+@app.get("/exam-sessions")
+async def list_exam_sessions():
+    sessions = exam_session_service.list_sessions()
+    return {"items": [session.model_dump(mode="json") for session in sessions]}
+
+
+@app.post("/exam-sessions")
+async def create_exam_session(request: ExamSessionCreateRequest):
+    session = exam_session_service.create_session(request.admin_id, request.title, request.config)
+    return {"session": session.model_dump(mode="json")}
+
+
+@app.get("/exam-sessions/{session_id}")
+async def get_exam_session(session_id: str):
+    session = exam_session_service.get_session(session_id)
+    if session is None:
+        return {"session": None}
+    return {"session": session.model_dump(mode="json")}
+
+
+@app.post("/exam-sessions/{session_id}/configure")
+async def configure_exam_session(session_id: str, request: ExamSessionConfigureRequest):
+    try:
+        session = exam_session_service.configure_session(session_id, request.config)
+        return {"session": session.model_dump(mode="json")}
+    except SessionTransitionError as exc:
+        return {"error": str(exc)}
+
+
+@app.post("/exam-sessions/{session_id}/students")
+async def assign_exam_students(session_id: str, request: ExamSessionAssignRequest):
+    session = exam_session_service.assign_students(session_id, request.submissions)
+    return {"session": session.model_dump(mode="json")}
+
+
+@app.post("/exam-sessions/{session_id}/ready")
+async def mark_exam_session_ready(session_id: str):
+    try:
+        session = exam_session_service.set_ready(session_id)
+        return {"session": session.model_dump(mode="json")}
+    except SessionTransitionError as exc:
+        return {"error": str(exc)}
+
+
+@app.post("/exam-sessions/{session_id}/activate")
+async def activate_exam_session(session_id: str):
+    try:
+        session = exam_session_service.activate_session(session_id)
+        return {"session": session.model_dump(mode="json")}
+    except SessionTransitionError as exc:
+        return {"error": str(exc)}
+
+
+@app.post("/exam-sessions/{session_id}/gatekeeper/precheck")
+async def gatekeeper_precheck(session_id: str, request: ExamSessionRollNumberRequest):
+    try:
+        decision = exam_session_service.gatekeeper_precheck(session_id, request.roll_number)
+        session = exam_session_service.get_session(session_id)
+        return {
+            "decision": decision.model_dump(mode="json"),
+            "session": session.model_dump(mode="json") if session else None,
+        }
+    except SessionTransitionError as exc:
+        return {"error": str(exc)}
+
+
+@app.post("/exam-sessions/{session_id}/oracle/start")
+async def start_oracle_analysis(session_id: str, request: ExamSessionRollNumberRequest):
+    try:
+        session = await exam_session_service.start_oracle_analysis(session_id, request.roll_number)
+        return {"session": session.model_dump(mode="json")}
+    except SessionTransitionError as exc:
+        return {"error": str(exc)}
+
+
+@app.post("/exam-sessions/{session_id}/complete")
+async def complete_exam_session(session_id: str):
+    try:
+        session = exam_session_service.complete_session(session_id)
+        return {"session": session.model_dump(mode="json")}
+    except SessionTransitionError as exc:
+        return {"error": str(exc)}
+
+
+@app.post("/exam-sessions/{session_id}/archive")
+async def archive_exam_session(session_id: str):
+    try:
+        session = exam_session_service.archive_session(session_id)
+        return {"session": session.model_dump(mode="json")}
+    except SessionTransitionError as exc:
+        return {"error": str(exc)}
 
 @app.post("/face/verify")
 async def verify_face(request: FaceVerifyRequest):
@@ -73,63 +176,19 @@ async def get_pending_alerts():
 
 @app.post("/face/resolve-alert")
 async def resolve_alert(request: ResolveAlertRequest):
-    success = face_service.resolve_alert(
-        request.conflict_id, 
-        request.approved,
-        request.reviewer_id,
-        request.reason
-    )
+    success = face_service.resolve_alert(request.conflict_id, request.approved)
     return {"success": success}
-
-@app.get("/face/conflict/{conflict_id}")
-async def get_conflict_details(conflict_id: str):
-    details = face_service.get_conflict_details(conflict_id)
-    if details is None:
-        return {"error": "Conflict not found"}, 404
-    return details
-
-@app.post("/admin/review-conflict")
-async def admin_review_conflict(request: AdminReviewRequest):
-    success = face_service.admin_review_conflict(
-        request.conflict_id,
-        request.approved,
-        request.reviewer_id,
-        request.reason
-    )
-    if not success:
-        return {"error": "Conflict not found"}, 404
-    return {"success": True, "message": "Review decision recorded"}
-
-@app.get("/admin/override-log")
-async def get_override_log():
-    return face_service.get_override_log()
 
 @app.post("/analyze")
 async def analyze_repo(request: AnalyzeRequest):
     # Legacy REST endpoint for backward compatibility
-    input_data = {"repo_url": request.repo_url, "report_path": request.report_path}
+    input_data = {"repo_url": request.repo_url, "report_path": request.report_path, "roll_number": request.roll_number}
     context = await main_agent.process("api_session", input_data)
     try:
         data = context.model_dump()
     except AttributeError:
         data = context.dict()
     return {"status": "success", "data": data}
-
-@app.post("/gatekeeper/verify")
-async def gatekeeper_verify(request: GatekeeperVerifyRequest):
-    """
-    Direct endpoint to run the Gatekeeper verification pipeline.
-    """
-    result = gatekeeper_pipeline.run(request.roll_number, request.face_id)
-    return {"status": "success", "data": result.to_dict()}
-
-@app.get("/gatekeeper/registry")
-async def gatekeeper_registry():
-    """
-    Endpoint to fetch all active registered students.
-    """
-    students = gatekeeper_pipeline._registry.all_active()
-    return {"status": "success", "data": [s.to_dict() for s in students]}
 
 @app.websocket("/ws/analyze")
 async def websocket_analyze(websocket: WebSocket):

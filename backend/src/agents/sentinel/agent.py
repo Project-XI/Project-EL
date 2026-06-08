@@ -1,5 +1,6 @@
 from typing import Any, Dict
 from src.agents.base import BaseAgent
+from src.models.events import EventType
 from src.models.context import StructuredContext
 
 class SentinelAgent(BaseAgent):
@@ -20,6 +21,6 @@ class SentinelAgent(BaseAgent):
         # In the future, this agent will analyze user interaction, detect anomalies, etc.
         # For now, it's a pass-through.
         
-        self.emit_event(session_id, "AGENT_PROGRESS", {"agent": "Sentinel", "status": "complete", "milestone": "Behavior Analyzed (Placeholder)"})
+        self.emit_event(session_id, EventType.AGENT_PROGRESS, {"agent": "Sentinel", "status": "complete", "milestone": "Behavior Analyzed (Placeholder)"})
         return input_data
 

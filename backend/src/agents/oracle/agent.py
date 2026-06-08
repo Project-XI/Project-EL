@@ -105,9 +105,16 @@ class OracleAgent(BaseAgent):
         await send_log("[Oracle] Extracting observable engineering signals...", "info")
         if repo_path:
             observable_signals = ObservableSignalsEngine.extract_signals(repo_path, repo_structure, repo_detections, project_graph)
-            self.emit_event(session_id, "OBSERVABLE_SIGNALS_EXTRACTED", {
+            self.emit_event(session_id, EventType.AGENT_PROGRESS, {
+                "agent": "Oracle",
+                "status": "running",
+                "milestone": "Observable signals extracted",
                 "signal_count": len(observable_signals),
-                "critical_signals": len([s for s in observable_signals if s.risk_level == "high"]),
+                "critical_signals": len([
+                    s for s in observable_signals
+                    if getattr(s, "risk_level", None) == "high"
+                    or (isinstance(s, dict) and s.get("risk_level") == "high")
+                ]),
             })
 
         # ===== Architecture Inference (AST-based, deterministic) =====
@@ -128,9 +135,16 @@ class OracleAgent(BaseAgent):
             failure_scenarios = ExecutionGraphFailureAnalyzer.analyze_failure_scenarios(
                 repo_path, repo_structure, repo_detections, observable_signals, project_graph
             )
-            self.emit_event(session_id, "FAILURE_SCENARIOS_ANALYZED", {
+            self.emit_event(session_id, EventType.AGENT_PROGRESS, {
+                "agent": "Oracle",
+                "status": "running",
+                "milestone": "Failure scenarios analyzed",
                 "scenario_count": len(failure_scenarios),
-                "critical_scenarios": len([s for s in failure_scenarios if s.propagation_risk == "critical"]),
+                "critical_scenarios": len([
+                    s for s in failure_scenarios
+                    if getattr(s, "propagation_risk", None) == "critical"
+                    or (isinstance(s, dict) and s.get("propagation_risk") == "critical")
+                ]),
             })
 
         # ===== PHASE 2: Evidence-Grounded Viva Generation =====
@@ -140,11 +154,14 @@ class OracleAgent(BaseAgent):
             grounded_viva_targets = EvidenceGroundedVivaGenerator.generate_questions(
                 failure_scenarios, observable_signals, repo_detections, repo_path
             )
-            self.emit_event(session_id, "EVIDENCE_GROUNDED_VIVA_GENERATED", {
+            self.emit_event(session_id, EventType.AGENT_PROGRESS, {
+                "agent": "Oracle",
+                "status": "running",
+                "milestone": "Evidence-grounded viva generated",
                 "viva_count": len(grounded_viva_targets),
-                "difficulty_breakdown": f"hard: {len([v for v in grounded_viva_targets if v.difficulty == 'hard'])}, "
-                                       f"medium: {len([v for v in grounded_viva_targets if v.difficulty == 'medium'])}, "
-                                       f"foundational: {len([v for v in grounded_viva_targets if v.difficulty == 'foundational'])}",
+                "difficulty_breakdown": f"hard: {len([v for v in grounded_viva_targets if getattr(v, 'difficulty', None) == 'hard'])}, "
+                                       f"medium: {len([v for v in grounded_viva_targets if getattr(v, 'difficulty', None) == 'medium'])}, "
+                                       f"foundational: {len([v for v in grounded_viva_targets if getattr(v, 'difficulty', None) == 'foundational'])}",
             })
 
         # Fallback viva generation (backward compatibility)
@@ -173,10 +190,6 @@ class OracleAgent(BaseAgent):
             complexity_mismatch=complexity_mismatch
         )
         
-        # Attach Phase 2 evidence-grounded analysis to context
-        context.observable_signals = observable_signals
-        context.failure_scenarios = failure_scenarios
-
         # 5. Implementation Intelligence Phase
         if repo_url and repo_path:
             self.log_info("Starting implementation flow analysis...")
@@ -184,7 +197,7 @@ class OracleAgent(BaseAgent):
             context = ImplementationFlowEngine.analyze_implementation(repo_path, repo_structure, context)
             self.emit_event(session_id, EventType.IMPLEMENTATION_FLOW_DETECTED, {"nodes": len(context.execution_graph.nodes)})
 
-        self.emit_event(session_id, "AGENT_PROGRESS", {"agent": "Oracle", "status": "complete", "milestone": "Submission Intelligence"})
+        self.emit_event(session_id, EventType.AGENT_PROGRESS, {"agent": "Oracle", "status": "complete", "milestone": "Submission Intelligence"})
         await send_log("[Oracle] Submission intelligence complete.", "success")
         
         return context

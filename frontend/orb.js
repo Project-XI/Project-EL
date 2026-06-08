@@ -1,3 +1,328 @@
+"use strict";
+
+const API_BASE = 'http://localhost:8000';
+const stageLabels = ['DRAFT', 'CONFIGURED', 'READY', 'LIVE', 'ACTIVE_VIVA', 'COMPLETED', 'ARCHIVED'];
+
+const state = {
+  sessions: [],
+  selectedSessionId: null,
+  latestDecision: null,
+  latestOracle: null,
+  latestEvents: [],
+};
+
+const $ = (id) => document.getElementById(id);
+
+const els = {
+  backendStatus: $('backend-status'),
+  backendNote: $('backend-note'),
+  stageStrip: $('stage-strip'),
+  sessionSelect: $('session-select'),
+  sessionState: $('session-state'),
+  sessionCount: $('session-count'),
+  admissionCount: $('admission-count'),
+  gatekeeperOutput: $('gatekeeper-output'),
+  oracleOutput: $('oracle-output'),
+  eventFeed: $('event-feed'),
+  artifactList: $('artifact-list'),
+  sessionList: $('session-list'),
+};
+
+function toDateTimeLocal(value) {
+  if (!value) return '';
+  const date = new Date(value);
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+function parseDateTimeLocal(value) {
+  return value ? new Date(value).toISOString() : null;
+}
+
+function parseRubric() {
+  const lines = $('rubric-criteria').value.split('\n').map((line) => line.trim()).filter(Boolean);
+  const criteria = lines.map((line, index) => {
+    const [name = `Criterion ${index + 1}`, score = '10', description = ''] = line.split('|').map((part) => part.trim());
+    return { name, max_score: Number(score) || 10, description: description || null };
+  });
+  return {
+    title: $('rubric-title').value.trim() || 'Default Viva Rubric',
+    criteria,
+  };
+}
+
+function parseTimingWindow() {
+  return {
+    opens_at: parseDateTimeLocal($('opens-at').value),
+    closes_at: parseDateTimeLocal($('closes-at').value),
+    viva_duration_minutes: Number($('duration').value) || 15,
+    check_in_grace_minutes: Number($('grace').value) || 5,
+  };
+}
+
+function parseConfig() {
+  return {
+    subject: $('subject').value.trim(),
+    course: $('course').value.trim(),
+    semester: $('semester').value.trim(),
+    subject_code: $('subject-code').value.trim() || null,
+    instructor_name: $('instructor').value.trim() || null,
+    exam_coordinator: $('coordinator').value.trim() || null,
+    timing_window: parseTimingWindow(),
+    rubric: parseRubric(),
+  };
+}
+
+function parseSubmissions() {
+  return $('student-submissions').value
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const [roll_number = '', repository_url = '', documents = '', batch_label = ''] = line.split('|').map((part) => part.trim());
+      return {
+        roll_number,
+        repository_url: repository_url || null,
+        document_paths: documents ? documents.split(',').map((item) => item.trim()).filter(Boolean) : [],
+        batch_label: batch_label || null,
+      };
+    });
+}
+
+async function request(path, options = {}) {
+  const response = await fetch(`${API_BASE}${path}`, {
+    headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
+    ...options,
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data?.detail || data?.error || `Request failed: ${response.status}`);
+  }
+  return data;
+}
+
+function setBackendStatus(ok, note) {
+  els.backendStatus.textContent = ok ? 'Online' : 'Offline';
+  els.backendStatus.classList.toggle('ok', ok);
+  els.backendNote.textContent = note;
+}
+
+function renderStageStrip(session) {
+  const current = session?.state || 'DRAFT';
+  const currentIndex = stageLabels.indexOf(current);
+  els.stageStrip.innerHTML = stageLabels.map((label) => `
+    <div class="stage ${label === current ? 'active' : ''} ${stageLabels.indexOf(label) <= currentIndex ? 'done' : ''}">
+      <span>${label.replaceAll('_', ' ')}</span>
+    </div>
+  `).join('');
+}
+
+function renderSessions() {
+  const sessions = state.sessions;
+  els.sessionSelect.innerHTML = sessions.length
+    ? sessions.map((session) => `<option value="${session.session_id}">${session.title} · ${session.state}</option>`).join('')
+    : '<option value="">No sessions yet</option>';
+  els.sessionList.innerHTML = sessions.length
+    ? sessions.map((session) => `
+        <button class="session-pill ${session.session_id === state.selectedSessionId ? 'selected' : ''}" data-session="${session.session_id}">
+          <strong>${session.title}</strong>
+          <span>${session.session_id}</span>
+          <small>${session.state}</small>
+        </button>
+      `).join('')
+    : '<p class="muted">Create a draft session to begin the lifecycle.</p>';
+  document.querySelectorAll('[data-session]').forEach((button) => {
+    button.addEventListener('click', () => selectSession(button.dataset.session));
+  });
+}
+
+function renderCurrentSession(session) {
+  renderStageStrip(session);
+  els.sessionState.textContent = session?.state || '—';
+  els.sessionCount.textContent = session?.assigned_students?.length ?? 0;
+  els.admissionCount.textContent = session?.gatekeeper_decisions?.length ?? 0;
+  if (session?.gatekeeper_decisions?.length) {
+    state.latestDecision = session.gatekeeper_decisions[session.gatekeeper_decisions.length - 1];
+  }
+  if (session?.analysis_artifacts?.length) {
+    state.latestOracle = session.analysis_artifacts[session.analysis_artifacts.length - 1];
+  }
+  els.gatekeeperOutput.textContent = state.latestDecision
+    ? JSON.stringify(state.latestDecision, null, 2)
+    : 'No admission decision recorded for this session.';
+  els.oracleOutput.textContent = state.latestOracle
+    ? JSON.stringify(state.latestOracle, null, 2)
+    : 'ORACLE has not started yet.';
+  els.artifactList.innerHTML = session?.analysis_artifacts?.length
+    ? session.analysis_artifacts.slice().reverse().map((artifact) => `
+        <article class="artifact-card">
+          <strong>${artifact.artifact_type}</strong>
+          <pre>${escapeHtml(JSON.stringify(artifact.payload, null, 2))}</pre>
+        </article>
+      `).join('')
+    : '<p class="muted">Artifacts will appear here after ORACLE analysis starts.</p>';
+
+  const auditEvents = session?.audit_events || [];
+  state.latestEvents = auditEvents.slice().reverse();
+  els.eventFeed.innerHTML = auditEvents.length
+    ? auditEvents.slice().reverse().map((event) => `
+        <article class="feed-item">
+          <div>
+            <strong>${event.event_type}</strong>
+            <span>${new Date(event.timestamp).toLocaleString()}</span>
+          </div>
+          <small>${event.actor}</small>
+        </article>
+      `).join('')
+    : '<p class="muted">Audit-safe events will be recorded here.</p>';
+}
+
+function escapeHtml(value) {
+  return value
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;');
+}
+
+async function loadSessions(preselect = null) {
+  try {
+    const data = await request('/exam-sessions');
+    state.sessions = data.items || [];
+    const nextSelection = preselect || state.selectedSessionId || state.sessions[0]?.session_id || null;
+    state.selectedSessionId = nextSelection;
+    renderSessions();
+    if (nextSelection) {
+      await selectSession(nextSelection, { silent: true });
+    } else {
+      renderCurrentSession(null);
+    }
+    setBackendStatus(true, `${state.sessions.length} session(s) available from the exam-session API.`);
+  } catch (error) {
+    setBackendStatus(false, error.message);
+    renderCurrentSession(null);
+  }
+}
+
+async function selectSession(sessionId, options = {}) {
+  if (!sessionId) return;
+  state.selectedSessionId = sessionId;
+  $('session-select').value = sessionId;
+  const payload = await request(`/exam-sessions/${sessionId}`);
+  const session = payload.session;
+  renderSessions();
+  renderCurrentSession(session);
+  if (!options.silent) {
+    setBackendStatus(true, `Loaded ${session.title} (${session.state}).`);
+  }
+}
+
+async function createSession() {
+  const payload = {
+    admin_id: $('admin-id').value.trim(),
+    title: $('session-title').value.trim(),
+  };
+  const data = await request('/exam-sessions', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+  await loadSessions(data.session.session_id);
+}
+
+async function configureSession() {
+  const sessionId = state.selectedSessionId;
+  if (!sessionId) throw new Error('Create or select a session first.');
+  await request(`/exam-sessions/${sessionId}/configure`, {
+    method: 'POST',
+    body: JSON.stringify({ config: parseConfig() }),
+  });
+  await loadSessions(sessionId);
+}
+
+async function assignStudents() {
+  const sessionId = state.selectedSessionId;
+  if (!sessionId) throw new Error('Create or select a session first.');
+  await request(`/exam-sessions/${sessionId}/students`, {
+    method: 'POST',
+    body: JSON.stringify({ submissions: parseSubmissions() }),
+  });
+  await loadSessions(sessionId);
+}
+
+async function markReady() {
+  const sessionId = state.selectedSessionId;
+  if (!sessionId) throw new Error('Create or select a session first.');
+  await request(`/exam-sessions/${sessionId}/ready`, { method: 'POST', body: '{}' });
+  await loadSessions(sessionId);
+}
+
+async function activateSession() {
+  const sessionId = state.selectedSessionId;
+  if (!sessionId) throw new Error('Create or select a session first.');
+  await request(`/exam-sessions/${sessionId}/activate`, { method: 'POST', body: '{}' });
+  await loadSessions(sessionId);
+}
+
+async function runGatekeeper() {
+  const sessionId = state.selectedSessionId;
+  if (!sessionId) throw new Error('Create or select a session first.');
+  const roll_number = $('roll-number').value.trim();
+  const data = await request(`/exam-sessions/${sessionId}/gatekeeper/precheck`, {
+    method: 'POST',
+    body: JSON.stringify({ roll_number }),
+  });
+  state.latestDecision = data.decision;
+  renderCurrentSession(data.session);
+  setBackendStatus(true, data.decision.admitted ? `Admission granted for ${data.decision.student_roll_number}.` : `Admission rejected: ${data.decision.reason}`);
+}
+
+async function startOracle() {
+  const sessionId = state.selectedSessionId;
+  if (!sessionId) throw new Error('Create or select a session first.');
+  const roll_number = $('roll-number').value.trim();
+  const data = await request(`/exam-sessions/${sessionId}/oracle/start`, {
+    method: 'POST',
+    body: JSON.stringify({ roll_number }),
+  });
+  await loadSessions(sessionId);
+  setBackendStatus(true, `ORACLE analysis attached to ${data.session.title}.`);
+}
+
+function bindEvents() {
+  $('refresh-sessions').addEventListener('click', () => loadSessions());
+  $('create-session').addEventListener('click', async () => handleAction(createSession));
+  $('configure-session').addEventListener('click', async () => handleAction(configureSession));
+  $('assign-students').addEventListener('click', async () => handleAction(assignStudents));
+  $('set-ready').addEventListener('click', async () => handleAction(markReady));
+  $('activate-session').addEventListener('click', async () => handleAction(activateSession));
+  $('gatekeeper-check').addEventListener('click', async () => handleAction(runGatekeeper));
+  $('start-oracle').addEventListener('click', async () => handleAction(startOracle));
+  $('session-select').addEventListener('change', (event) => selectSession(event.target.value));
+}
+
+async function handleAction(action) {
+  try {
+    await action();
+  } catch (error) {
+    setBackendStatus(false, error.message);
+  }
+}
+
+function seedTimeline() {
+  els.stageStrip.innerHTML = stageLabels.map((label) => `
+    <div class="stage ${label === 'DRAFT' ? 'active' : ''}"><span>${label.replaceAll('_', ' ')}</span></div>
+  `).join('');
+}
+
+async function boot() {
+  seedTimeline();
+  bindEvents();
+  $('opens-at').value = toDateTimeLocal(new Date(Date.now() + 60 * 60 * 1000).toISOString());
+  $('closes-at').value = toDateTimeLocal(new Date(Date.now() + 4 * 60 * 60 * 1000).toISOString());
+  await loadSessions();
+}
+
+boot();
 /**
  * El Orb — Vanilla WebGL (ported from OGL React component)
  * Non-interactive: hover = 0 always, no mouse events.

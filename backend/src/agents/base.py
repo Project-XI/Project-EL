@@ -14,7 +14,7 @@ class BaseAgent(ABC):
     def emit_event(self, session_id: str, event_type: EventType, payload: Dict[str, Any]):
         """Standard method for agents to emit structured events."""
         # Also dispatch a repository event for progress updates
-        if event_type == "agent.progress" and self.github_token:
+        if str(event_type) == EventType.AGENT_PROGRESS.value and self.github_token:
             self._dispatch_github_event(session_id, payload)
             
         return EventEmitter.emit(
