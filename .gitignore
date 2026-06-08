@@ -30,3 +30,5 @@ backend/tests/validation_report.html
 
 # Ignore all markdown files
 *.md
+!README.md
+!**/README.md
