@@ -28,12 +28,5 @@ backend/cloned_repos/
 backend/evaluation/results/
 backend/tests/validation_report.html
 
-# Local documentation & reports
-DISCORD_BOT_SETUP.md
-MAIN_AGENT_ISSUE_BREAKDOWN.md
-ORACLE_ARCHITECTURE_DOCUMENTATION.md
-ORACLE_PHASE_2_SUMMARY.md
-ORACLE_PHASE_3_5_STATUS.md
-ORACLE_STABILIZATION_PLAN.md
-ORACLE_TESTING_FRAMEWORK.md
-ORACLE_UI_ALIGNMENT_REPORT.md
+# Ignore all markdown files
+*.md
