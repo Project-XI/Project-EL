@@ -57,7 +57,7 @@ backend/venv/bin/python3 -m src.cli debug https://github.com/user/repo
 
 ## Running the Validation Suite
 
-To verify that the ORACLE core is working or not , evaluation pipelines, and report generators are functioning correctly :
+To verify that the ORACLE core, evaluation pipelines, and report generators are functioning correctly:
 
 ```bash
 export PYTHONPATH=$PYTHONPATH:$(pwd)/backend
@@ -86,4 +86,3 @@ backend/venv/bin/python3 backend/tests/validation_suite.py
 - **Deterministic**: Heuristic rules and AST traversal replace stochastic generation.
 - **Explainable**: Every claim requires a confidence score and a traceable line of code evidence.
 - **Production-Grade**: Built with scalability (ExclusionEngine) and robust failure handling.
-
