@@ -27,6 +27,14 @@ class EventType(str, Enum):
     ADMIN_REVIEW_REJECTED = "admin_review.rejected"
     ADMIN_OVERRIDE_ACTION = "admin_override.action"
     
+    # Audit Log Events
+    VERIFICATION_ATTEMPT = "verification.attempt"
+    FACE_MATCH = "face.match"
+    FACE_MISMATCH = "face.mismatch"
+    SUSPICIOUS_IDENTITY = "suspicious.identity"
+    ADMIN_OVERRIDE = "admin.override"
+    EXAMINATION_ACCESS = "examination.access"
+    
     # ORACLE Events
     FILE_RECEIVED = "file_received"
     PDF_PARSED = "pdf_parsed"
