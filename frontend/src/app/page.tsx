@@ -1,11 +1,62 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState, useEffect } from "react";
 import styles from "./page.module.css";
 import Grainient from "../components/Grainient";
+import { TextReveal } from "../components/motion/text-reveal";
+import { ExpandingArrowButton } from "../components/motion/expanding-arrow-button";
 
 export default function Home() {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [qsCount, setQsCount] = useState(12);
+  const [confidence, setConfidence] = useState(94.2);
+  const [typewriterText, setTypewriterText] = useState("");
+
+  useEffect(() => {
+    const words = ["Analyzing AST...", "Finding Vulnerabilities...", "Generating Qs...", "Active ON"];
+    let wordIdx = 0;
+    let charIdx = 0;
+    let isDeleting = false;
+    let typingTimeout: NodeJS.Timeout;
+
+    const type = () => {
+      const currentWord = words[wordIdx];
+      if (isDeleting) {
+        charIdx--;
+      } else {
+        charIdx++;
+      }
+
+      setTypewriterText(currentWord.substring(0, charIdx) + "|");
+
+      let delay = 60;
+      if (!isDeleting && charIdx === currentWord.length) {
+        delay = 1500;
+        isDeleting = true;
+      } else if (isDeleting && charIdx === 0) {
+        isDeleting = false;
+        wordIdx = (wordIdx + 1) % words.length;
+        delay = 300;
+      }
+
+      typingTimeout = setTimeout(type, delay);
+    };
+
+    typingTimeout = setTimeout(type, 100);
+
+    const numInterval = setInterval(() => {
+      setQsCount(prev => prev < 45 ? prev + 1 : 12);
+      setConfidence(prev => {
+        const next = prev + (Math.random() * 0.8 - 0.2);
+        return next > 99.9 ? 94.2 : next;
+      });
+    }, 400);
+
+    return () => {
+      clearTimeout(typingTimeout);
+      clearInterval(numInterval);
+    };
+  }, []);
 
   const scrollLeft = () => {
     if (scrollContainerRef.current) {
@@ -76,11 +127,21 @@ export default function Home() {
         </svg>
       ),
       content: (
-        <div className={styles.cardContentPill}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="3">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-          </svg>
-          Generated
+        <div className={styles.cardContentAlt}>
+          <div className={styles.swapBox}>
+            <span className={styles.swapLabel}>Viva Engine</span>
+            <div className={styles.swapValue}>
+              <span>{qsCount} Qs</span>
+              <span style={{ fontSize: '14px', color: '#8b5cf6' }}>Ready</span>
+            </div>
+          </div>
+          <div className={styles.swapBox}>
+            <span className={styles.swapLabel}>Adversarial Mode</span>
+            <div className={styles.swapValue}>
+              <span style={{ minWidth: '160px', display: 'inline-block' }}>{typewriterText}</span>
+              <span style={{ fontSize: '14px', color: '#10b981' }}></span>
+            </div>
+          </div>
         </div>
       )
     },
@@ -93,10 +154,21 @@ export default function Home() {
         </svg>
       ),
       content: (
-        <div className={styles.cardContentPanel}>
-          <div className={styles.panelCircle}>A</div>
-          <div className={styles.panelCircle}>B</div>
-          <div className={styles.panelCircle}>C</div>
+        <div className={styles.cardContentAlt}>
+          <div className={styles.swapBox}>
+            <span className={styles.swapLabel}>Active Agents</span>
+            <div className={styles.swapValue}>
+              <span>3 Models</span>
+              <span style={{ fontSize: '14px', color: '#3b82f6' }}>Sync</span>
+            </div>
+          </div>
+          <div className={styles.swapBox}>
+            <span className={styles.swapLabel}>Confidence Score</span>
+            <div className={styles.swapValue}>
+              <span style={{ minWidth: '60px', display: 'inline-block' }}>{confidence.toFixed(1)}%</span>
+              <span style={{ fontSize: '14px', color: '#10b981' }}>High</span>
+            </div>
+          </div>
         </div>
       )
     },
@@ -109,9 +181,21 @@ export default function Home() {
         </svg>
       ),
       content: (
-        <div className={styles.cardContentTranscript}>
-          <span className={styles.lockIcon}>🔒</span>
-          <span>Sealed</span>
+        <div className={styles.cardContentAlt}>
+          <div className={styles.swapBox}>
+            <span className={styles.swapLabel}>Session State</span>
+            <div className={styles.swapValue}>
+              <span>Sealed</span>
+              <span style={{ fontSize: '14px', color: '#10b981' }}>Secured</span>
+            </div>
+          </div>
+          <div className={styles.swapBox}>
+            <span className={styles.swapLabel}>Audit Log</span>
+            <div className={styles.swapValue}>
+              <span>0x8F2...</span>
+              <span style={{ fontSize: '14px', color: '#8b5cf6' }}>Tx ID</span>
+            </div>
+          </div>
         </div>
       )
     }
@@ -157,7 +241,7 @@ export default function Home() {
           <div className={styles.navLinks}>
             <a href="#vision">Vision</a>
             <a href="#github">Github</a>
-            <a href="#docs">Docs</a>
+            <a href="/docs">Docs</a>
             <button className={styles.navButton}>Start Kiosk</button>
           </div>
         </nav>
@@ -168,9 +252,15 @@ export default function Home() {
             <span className={styles.badgeNew}>SYSTEM</span> AI-Powered Viva Assessment
           </div>
 
-          <h1 className={styles.heroTitle}>
-            Fairness Through AI.<br />No fear. No favour. Only knowledge.
-          </h1>
+          <TextReveal
+            as="h1"
+            className={styles.heroTitle}
+            text={[
+              "Fairness Through AI.",
+              "No fear. No favour. Only",
+              "knowledge."
+            ]}
+          />
 
           <div className={styles.heroButtons}>
             <a href="#" className={styles.buttonPrimary}>
@@ -225,6 +315,127 @@ export default function Home() {
           ))}
         </div>
       </section>
+
+      {/* Two Large Cards Section */}
+      <section className={styles.largeCardsSection}>
+        <div className={styles.largeCardsGrid}>
+
+          {/* Card 1: The Viva Engine */}
+          <div className={styles.largeCard}>
+            <div className={styles.largeCardBg}>
+              <Grainient color1="#FF9FFC" color2="#5227FF" color3="#B497CF" timeSpeed={0.25} colorBalance={0} warpStrength={1} warpFrequency={5} warpSpeed={2} warpAmplitude={50} blendAngle={0} blendSoftness={0.05} rotationAmount={500} noiseScale={2} grainAmount={0.1} grainScale={2} grainAnimated={false} contrast={1.5} gamma={1} saturation={1} centerX={0} centerY={0} zoom={3.5} />
+            </div>
+            <div className={styles.largeCardContent}>
+              <div className={styles.largeCardLeft}>
+                <div>
+                  <h3 className={styles.largeCardTitle}>Submission<br />Intelligence</h3>
+                  <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '1.1rem', maxWidth: '80%' }}>
+                    The AI reconstructs your project into a semantic graph of concepts, dependencies, and implementation paths—creating a viva unique to your work.
+                  </p>
+                </div>
+                <div className={styles.largeCardActions}>
+                  <ExpandingArrowButton>View Demo</ExpandingArrowButton>
+                </div>
+              </div>
+              <div className={styles.largeCardRight}>
+                <div className={styles.mockUiPanel}>
+                  <div className={styles.swapBox}>
+                    <span className={styles.swapLabel}>Knowledge Graph</span>
+                    <div className={styles.swapValue}>
+                      <span>{130 + qsCount} Concepts</span>
+                      <span style={{ fontSize: '14px', color: '#8b5cf6' }}>Generated</span>
+                    </div>
+                  </div>
+                  <div className={styles.swapBox}>
+                    <span className={styles.swapLabel}>Question Tree</span>
+                    <div className={styles.swapValue}>
+                      <span>Ready</span>
+                      <span style={{ fontSize: '14px', color: '#10b981' }}>Dynamic</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Card 2: Immutable Transcript */}
+          <div className={styles.largeCard}>
+            <div className={styles.largeCardBg}>
+              <Grainient color1="#FF9FFC" color2="#5227FF" color3="#B497CF" timeSpeed={0.25} colorBalance={0} warpStrength={1} warpFrequency={5} warpSpeed={2} warpAmplitude={50} blendAngle={0} blendSoftness={0.05} rotationAmount={500} noiseScale={2} grainAmount={0.1} grainScale={2} grainAnimated={false} contrast={1.5} gamma={1} saturation={1} centerX={0} centerY={0} zoom={3.5} />
+            </div>
+            <div className={styles.largeCardContent}>
+              <div className={styles.largeCardLeft}>
+                <div>
+                  <h3 className={styles.largeCardTitle}>Consensus<br />Evaluation</h3>
+                  <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '1.1rem', maxWidth: '80%' }}>
+                    Every answer is reviewed by multiple reasoning models before a unified score is produced. No assumptions. No examiner bias. Only evidence.
+                  </p>
+                </div>
+                <div className={styles.largeCardActions}>
+                  <ExpandingArrowButton>Explore Tx</ExpandingArrowButton>
+                </div>
+              </div>
+              <div className={styles.largeCardRight}>
+                <div className={styles.mockUiPanel}>
+                  <div className={styles.swapBox}>
+                    <span className={styles.swapLabel}>AI Panel</span>
+                    <div className={styles.swapValue}>
+                      <span>3 Models</span>
+                      <span style={{ fontSize: '14px', color: '#3b82f6' }}>Online</span>
+                    </div>
+                  </div>
+                  <div className={styles.swapBox}>
+                    <span className={styles.swapLabel}>Confidence</span>
+                    <div className={styles.swapValue}>
+                      <span style={{ minWidth: '60px', display: 'inline-block' }}>{confidence.toFixed(1)}%</span>
+                      <span style={{ fontSize: '14px', color: '#10b981' }}>Stable</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className={styles.footer}>
+        <div className={styles.footerContent}>
+          <div className={styles.footerLeft}>
+            <span className={styles.footerLogo}>TWELVE</span>
+            <p className={styles.footerDescription}>
+              Fairness Through AI. No fear. No favour. Only knowledge.
+            </p>
+          </div>
+          <div className={styles.footerRight}>
+            <div className={styles.footerLinksGroup}>
+              <h4>Product</h4>
+              <a href="#">Features</a>
+              <a href="#">Security</a>
+              <a href="#">Pricing</a>
+            </div>
+            <div className={styles.footerLinksGroup}>
+              <h4>Resources</h4>
+              <a href="/docs" target="_blank" rel="noopener noreferrer">Documentation</a>
+              <a href="#">API Reference</a>
+              <a href="#">GitHub</a>
+            </div>
+            <div className={styles.footerLinksGroup}>
+              <h4>Company</h4>
+              <a href="#">About</a>
+              <a href="#">Privacy</a>
+              <a href="#">Terms</a>
+            </div>
+          </div>
+        </div>
+        <div className={styles.footerBottom}>
+          <p>© 2026 TWELVE. All rights reserved.</p>
+          <div style={{ display: 'flex', gap: '24px' }}>
+            <a href="#" style={{ color: 'inherit', textDecoration: 'none' }}>Privacy Policy</a>
+            <a href="#" style={{ color: 'inherit', textDecoration: 'none' }}>Terms of Service</a>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

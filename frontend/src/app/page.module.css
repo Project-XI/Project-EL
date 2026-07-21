@@ -228,9 +228,8 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 100px;
-  max-width: 1000px;
-  margin: 0 auto;
+  max-width: 1400px;
+  margin: 0 auto 100px auto;
   width: 100%;
   padding: 0 20px;
 }
@@ -268,10 +267,11 @@
 
 .cardsContainer {
   display: flex;
+  margin-left: 100px;
   gap: 24px;
   overflow-x: auto;
   /* Use padding to align exactly with the max-width container above it */
-  padding: 0 20px 40px max(20px, calc((100vw - 1000px) / 2 + 20px));
+  padding: 20px 20px 40px max(20px, calc((100vw - 1000px) / 2 + 20px));
   scroll-snap-type: x mandatory;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
@@ -439,6 +439,186 @@
   font-size: 28px;
 }
 
+/* New Large Cards Section */
+.largeCardsSection {
+  padding: 100px 20px;
+  max-width: 1440px;
+  margin: 0 auto;
+}
+
+.largeCardsGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
+}
+
+.largeCard {
+  position: relative;
+  border-radius: 32px;
+  overflow: hidden;
+  min-height: 580px;
+  display: flex;
+  background-color: #1a1a1a;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.largeCardBg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  opacity: 0.9;
+}
+
+.largeCardContent {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  width: 100%;
+  padding: 48px;
+  justify-content: space-between;
+}
+
+.largeCardLeft {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  max-width: 50%;
+}
+
+.largeCardTitle {
+  font-family: "Cormorant Garamond", serif;
+  font-size: 3rem;
+  font-weight: 500;
+  color: white;
+  margin-bottom: 16px;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+}
+
+.largeCardBtn {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 100px;
+  padding: 12px 24px;
+  color: white;
+  font-size: 0.9rem;
+  cursor: pointer;
+  backdrop-filter: blur(10px);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s;
+  width: fit-content;
+}
+
+.largeCardBtn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.largeCardRight {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-end;
+}
+
+.mockUiPanel {
+  background: rgba(10, 10, 10, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 24px;
+  padding: 24px;
+  width: 280px;
+  backdrop-filter: blur(20px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.footer {
+  margin: 120px auto 40px auto;
+  width: calc(100% - 40px);
+  max-width: 1400px;
+  padding: 80px 60px 40px 60px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 32px;
+  background: linear-gradient(to bottom, #161616, #0a0a0a);
+}
+
+.footerContent {
+  display: flex;
+  justify-content: space-between;
+  gap: 60px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.footerLeft {
+  max-width: 300px;
+}
+
+.footerLogo {
+  font-family: "Cormorant Garamond", serif;
+  font-size: 1.8rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: white;
+  margin-bottom: 20px;
+  display: inline-block;
+}
+
+.footerDescription {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.footerRight {
+  display: flex;
+  gap: 80px;
+}
+
+.footerLinksGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.footerLinksGroup h4 {
+  color: white;
+  font-size: 0.95rem;
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+
+.footerLinksGroup a {
+  color: rgba(255, 255, 255, 0.5);
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: color 0.2s;
+}
+
+.footerLinksGroup a:hover {
+  color: white;
+}
+
+.footerBottom {
+  margin-top: 80px;
+  padding-top: 24px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  justify-content: space-between;
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 0.85rem;
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
 @media (max-width: 768px) {
   .navLinks {
     display: none;
@@ -457,5 +637,39 @@
 
   .cardsContainer {
     padding: 0 20px 20px 20px;
+  }
+
+  .largeCardsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .largeCardContent {
+    flex-direction: column;
+    padding: 32px;
+    gap: 40px;
+  }
+
+  .largeCardLeft {
+    max-width: 100%;
+  }
+
+  .largeCardRight {
+    align-items: flex-start;
+  }
+
+  .footerContent {
+    flex-direction: column;
+    gap: 40px;
+  }
+  
+  .footerRight {
+    flex-direction: column;
+    gap: 40px;
+  }
+
+  .footerBottom {
+    flex-direction: column;
+    gap: 12px;
+    align-items: center;
   }
 }

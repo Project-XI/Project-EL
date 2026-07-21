@@ -7,3 +7,6 @@ websockets
 # Pytest for testing
 pytest
 pytest-asyncio
+requests
+PyMuPDF
+python-docx

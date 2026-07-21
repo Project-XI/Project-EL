@@ -6,4 +6,5 @@
   height: 100%;
   overflow: hidden;
   border-radius: inherit; /* To inherit the 40px border radius of the landing card */
+  pointer-events: none;
 }

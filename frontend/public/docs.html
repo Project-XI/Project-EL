@@ -1,0 +1,1188 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TWELVE — Documentation</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap"
+        rel="stylesheet">
+    <style>
+        *,
+        *::before,
+        *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg: #F5F2EE;
+            --bg-alt: #EDEAE5;
+            --bg-white: #FAFAF8;
+            --text-primary: #1C1A17;
+            --text-secondary: #4A4740;
+            --text-muted: #8A8580;
+            --accent: #2B2825;
+            --rule: #D4D0CA;
+            --highlight: #E8E3DC;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--bg);
+            color: var(--text-primary);
+            font-size: 16px;
+            line-height: 1.7;
+        }
+
+        /* ---- HEADER ---- */
+        header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            background: var(--bg);
+            border-bottom: 1px solid var(--rule);
+            padding: 0 4rem;
+            height: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .logo {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.4rem;
+            font-weight: 500;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--text-primary);
+            text-decoration: none;
+        }
+
+        .nav-links {
+            display: flex;
+            list-style: none;
+            gap: 2.5rem;
+        }
+
+        .nav-links a {
+            font-size: 0.78rem;
+            font-weight: 400;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover {
+            color: var(--text-primary);
+        }
+
+        /* ---- HERO ---- */
+        .hero {
+            padding: 160px 4rem 100px;
+            max-width: 900px;
+        }
+
+        .hero-label {
+            font-size: 0.72rem;
+            font-weight: 400;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 2rem;
+        }
+
+        .hero h1 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: clamp(3.5rem, 7vw, 6rem);
+            font-weight: 300;
+            line-height: 1.05;
+            color: var(--text-primary);
+            margin-bottom: 2rem;
+            letter-spacing: -0.01em;
+        }
+
+        .hero h1 em {
+            font-style: italic;
+            font-weight: 300;
+        }
+
+        .hero-tagline {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.4rem;
+            font-weight: 400;
+            font-style: italic;
+            color: var(--text-secondary);
+            margin-bottom: 3rem;
+            letter-spacing: 0.02em;
+        }
+
+        .hero-meta {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            letter-spacing: 0.05em;
+            border-top: 1px solid var(--rule);
+            padding-top: 1.5rem;
+        }
+
+        /* ---- STATS BAR ---- */
+        .stats {
+            background: var(--accent);
+            padding: 2.5rem 4rem;
+            display: flex;
+            gap: 0;
+        }
+
+        .stat {
+            flex: 1;
+            text-align: center;
+            padding: 0 2rem;
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .stat:last-child {
+            border-right: none;
+        }
+
+        .stat-number {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2.4rem;
+            font-weight: 300;
+            color: #F5F2EE;
+            display: block;
+            letter-spacing: -0.02em;
+        }
+
+        .stat-label {
+            font-size: 0.7rem;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: rgba(245, 242, 238, 0.5);
+            margin-top: 0.3rem;
+        }
+
+        /* ---- MAIN LAYOUT ---- */
+        .main-layout {
+            display: grid;
+            grid-template-columns: 240px 1fr;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 4rem;
+            gap: 0;
+        }
+
+        /* ---- SIDEBAR ---- */
+        .sidebar {
+            padding: 4rem 2.5rem 4rem 0;
+            position: sticky;
+            top: 64px;
+            height: calc(100vh - 64px);
+            overflow-y: auto;
+            border-right: 1px solid var(--rule);
+        }
+
+        .sidebar-label {
+            font-size: 0.68rem;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 1.2rem;
+            display: block;
+        }
+
+        .sidebar-nav {
+            list-style: none;
+        }
+
+        .sidebar-nav li {
+            margin-bottom: 0.1rem;
+        }
+
+        .sidebar-nav a {
+            display: block;
+            font-size: 0.82rem;
+            color: var(--text-muted);
+            text-decoration: none;
+            padding: 0.35rem 0;
+            transition: color 0.2s;
+            border-left: 2px solid transparent;
+            padding-left: 0.8rem;
+            margin-left: -0.8rem;
+        }
+
+        .sidebar-nav a:hover {
+            color: var(--text-primary);
+            border-left-color: var(--text-primary);
+        }
+
+        .sidebar-nav .group-label {
+            font-size: 0.68rem;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--text-primary);
+            margin: 1.5rem 0 0.4rem;
+            display: block;
+            font-weight: 500;
+        }
+
+        /* ---- CONTENT ---- */
+        .content {
+            padding: 5rem 0 5rem 4rem;
+        }
+
+        .doc-section {
+            margin-bottom: 5rem;
+            padding-bottom: 5rem;
+            border-bottom: 1px solid var(--rule);
+        }
+
+        .doc-section:last-child {
+            border-bottom: none;
+        }
+
+        .section-label {
+            font-size: 0.68rem;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 1.2rem;
+            display: block;
+        }
+
+        .doc-section h2 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2.8rem;
+            font-weight: 300;
+            line-height: 1.1;
+            color: var(--text-primary);
+            margin-bottom: 2rem;
+            letter-spacing: -0.01em;
+        }
+
+        .doc-section h3 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.6rem;
+            font-weight: 400;
+            color: var(--text-primary);
+            margin: 3rem 0 1rem;
+            letter-spacing: 0.01em;
+        }
+
+        .doc-section h4 {
+            font-size: 0.78rem;
+            font-weight: 500;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            margin: 2.5rem 0 0.8rem;
+        }
+
+        .doc-section p {
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+            line-height: 1.85;
+            margin-bottom: 1.2rem;
+            max-width: 68ch;
+        }
+
+        .doc-section p strong {
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        .doc-section ul,
+        .doc-section ol {
+            margin: 0.8rem 0 1.5rem 1.2rem;
+            max-width: 68ch;
+        }
+
+        .doc-section li {
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+            line-height: 1.85;
+            margin-bottom: 0.5rem;
+            padding-left: 0.4rem;
+        }
+
+        .doc-section li strong {
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        /* ---- CALLOUT ---- */
+        .callout {
+            background: var(--highlight);
+            border-left: 3px solid var(--text-primary);
+            padding: 1.8rem 2rem;
+            margin: 2rem 0;
+            max-width: 68ch;
+        }
+
+        .callout p {
+            margin-bottom: 0.6rem;
+            font-size: 0.92rem;
+        }
+
+        .callout p:last-child {
+            margin-bottom: 0;
+        }
+
+        /* ---- CODE BLOCK ---- */
+        .code-block {
+            background: var(--bg-alt);
+            border: 1px solid var(--rule);
+            padding: 1.8rem 2rem;
+            margin: 1.5rem 0;
+            font-family: 'DM Mono', 'Courier New', monospace;
+            font-size: 0.82rem;
+            color: var(--text-secondary);
+            line-height: 1.8;
+            white-space: pre;
+            overflow-x: auto;
+            max-width: 68ch;
+        }
+
+        /* ---- STEP LIST ---- */
+        .step-list {
+            margin: 1.5rem 0;
+            counter-reset: steps;
+            max-width: 68ch;
+        }
+
+        .step-item {
+            counter-increment: steps;
+            display: grid;
+            grid-template-columns: 2.5rem 1fr;
+            gap: 1rem;
+            margin-bottom: 2.5rem;
+            align-items: start;
+        }
+
+        .step-number {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.3rem;
+            font-weight: 400;
+            color: var(--text-muted);
+            padding-top: 0.1rem;
+        }
+
+        .step-content h5 {
+            font-size: 0.82rem;
+            font-weight: 500;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .step-content p {
+            margin-bottom: 0;
+        }
+
+        /* ---- VILLAIN BLOCK ---- */
+        .villain-block {
+            background: var(--bg-white);
+            border: 1px solid var(--rule);
+            padding: 2rem 2.5rem;
+            margin: 1.5rem 0;
+            max-width: 68ch;
+        }
+
+        .villain-title {
+            font-size: 0.72rem;
+            font-weight: 500;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            color: var(--text-primary);
+            margin-bottom: 1.2rem;
+            display: block;
+        }
+
+        .villain-block p {
+            margin-bottom: 0.7rem;
+        }
+
+        .villain-block p:last-child {
+            margin-bottom: 0;
+        }
+
+        /* ---- MODEL CARDS ---- */
+        .model-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+            margin: 1.5rem 0;
+            max-width: 68ch;
+        }
+
+        .model-card {
+            background: var(--bg-white);
+            border: 1px solid var(--rule);
+            padding: 1.8rem;
+        }
+
+        .model-label {
+            font-size: 0.65rem;
+            font-weight: 500;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 0.8rem;
+            display: block;
+        }
+
+        .model-name {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.1rem;
+            font-weight: 400;
+            color: var(--text-primary);
+            margin-bottom: 0.8rem;
+            display: block;
+        }
+
+        .model-weight {
+            font-size: 1.8rem;
+            font-family: 'Cormorant Garamond', serif;
+            font-weight: 300;
+            color: var(--text-secondary);
+            display: block;
+            margin-bottom: 0.6rem;
+        }
+
+        .model-card p {
+            font-size: 0.8rem;
+            margin-bottom: 0;
+        }
+
+        /* ---- ROADMAP ---- */
+        .roadmap-row {
+            display: grid;
+            grid-template-columns: 130px 1fr;
+            gap: 2rem;
+            margin-bottom: 2.5rem;
+            align-items: start;
+            max-width: 68ch;
+            border-top: 1px solid var(--rule);
+            padding-top: 1.5rem;
+        }
+
+        .roadmap-phase {
+            font-size: 0.68rem;
+            font-weight: 500;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            padding-top: 0.15rem;
+        }
+
+        .roadmap-detail h5 {
+            font-size: 0.88rem;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .roadmap-detail p {
+            margin-bottom: 0;
+        }
+
+        /* ---- FOOTER ---- */
+        footer {
+            background: var(--accent);
+            padding: 3rem 4rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .footer-left {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.2rem;
+            font-weight: 300;
+            color: rgba(245, 242, 238, 0.6);
+            letter-spacing: 0.1em;
+        }
+
+        .footer-right {
+            font-size: 0.72rem;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: rgba(245, 242, 238, 0.35);
+        }
+
+        /* ---- RESPONSIVE ---- */
+        @media (max-width: 900px) {
+            .main-layout {
+                grid-template-columns: 1fr;
+                padding: 0 2rem;
+            }
+
+            .sidebar {
+                display: none;
+            }
+
+            .content {
+                padding: 3rem 0;
+            }
+
+            header {
+                padding: 0 2rem;
+            }
+
+            .hero {
+                padding: 120px 2rem 60px;
+            }
+
+            .stats {
+                padding: 2rem;
+                flex-wrap: wrap;
+            }
+
+            .stat {
+                min-width: 50%;
+                border-right: none;
+            }
+
+            .model-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <a class="logo" href="#home">TWELVE</a>
+        <ul class="nav-links">
+            <li><a href="#vision">Vision</a></li>
+            <li><a href="#features">Features</a></li>
+            <li><a href="#tech-stack">Tech Stack</a></li>
+            <li><a href="#roadmap">Roadmap</a></li>
+        </ul>
+    </header>
+
+    <section class="hero" id="home">
+        <div class="hero-label">AI-Powered Viva Assessment</div>
+        <h1>Fairness<br><em>Through AI</em></h1>
+        <p class="hero-tagline">No fear. No favour. Only knowledge.</p>
+        <p class="hero-meta">Version 1.0 &nbsp;&mdash;&nbsp; May 2026 &nbsp;&mdash;&nbsp; Stage: Pre-Build / Ideation
+            Complete</p>
+    </section>
+
+    <div class="stats">
+        <div class="stat">
+            <span class="stat-number">10 min</span>
+            <span class="stat-label">Per Student</span>
+        </div>
+        <div class="stat">
+            <span class="stat-number">0%</span>
+            <span class="stat-label">Examiner Bias</span>
+        </div>
+        <div class="stat">
+            <span class="stat-number">100%</span>
+            <span class="stat-label">Transparency</span>
+        </div>
+        <div class="stat">
+            <span class="stat-number">3x</span>
+            <span class="stat-label">Faster Throughput</span>
+        </div>
+    </div>
+
+    <div class="main-layout">
+        <aside class="sidebar">
+            <span class="sidebar-label">Contents</span>
+            <ul class="sidebar-nav">
+                <li><span class="group-label">Overview</span></li>
+                <li><a href="#vision">The Vision</a></li>
+                <li><a href="#problem">Core Problem</a></li>
+                <li><a href="#solution">The Solution</a></li>
+                <li><a href="#beliefs">Core Beliefs</a></li>
+                <li><span class="group-label">Examination</span></li>
+                <li><a href="#session-flow">Session Flow</a></li>
+                <li><a href="#questioning">Questioning Strategy</a></li>
+                <li><a href="#marking">Marking Framework</a></li>
+                <li><a href="#appeal">Appeal Process</a></li>
+                <li><span class="group-label">Technical</span></li>
+                <li><a href="#architecture">Architecture</a></li>
+                <li><a href="#ai-panel">AI Panel</a></li>
+                <li><a href="#tech-stack">Technology Stack</a></li>
+                <li><a href="#roadmap">Roadmap</a></li>
+            </ul>
+        </aside>
+
+        <main class="content">
+
+            <!-- VISION -->
+            <div class="doc-section" id="vision">
+                <span class="section-label">01 — Overview</span>
+                <h2>The Vision</h2>
+                <p>The oral examination — the viva — is the most human assessment in academia. It is also the most
+                    broken. A student who studies for three years walks into a room for ten minutes. What happens in
+                    those ten minutes depends not on what they know but on who is sitting across from them.</p>
+                <p><strong>TWELVE ends that.</strong></p>
+                <p>TWELVE is a kiosk-based AI examination system installed on college-owned computers. It is not a
+                    replacement for education. It is a replacement for the single most biased moment in education — the
+                    oral viva conducted by a human examiner who has opinions, moods, favourites, and blind spots.</p>
+                <p>We are not anti-teacher. We are anti-bias.</p>
+
+                <h3>What TWELVE Does</h3>
+                <ul>
+                    <li>Identifies the student before the session begins</li>
+                    <li>Retrieves their submission history</li>
+                    <li>Conducts a structured oral examination through voice and text</li>
+                    <li>Evaluates responses against the college's own rubric</li>
+                    <li>Produces a final score with a complete, auditable transcript</li>
+                </ul>
+                <p>Every student. Same quality of questioning. Same standard of evaluation. Score reflects only what
+                    they know.</p>
+
+                <h3>The Name</h3>
+                <p>Twelve is a number associated with completeness. Twelve months in a year. Twelve hours on a clock
+                    face. Twelve members on a jury. TWELVE the system is exactly that: a complete, full-cycle assessment
+                    that misses nothing, favours no one, and produces a judgment that stands.</p>
+            </div>
+
+            <!-- PROBLEM -->
+            <div class="doc-section" id="problem">
+                <span class="section-label">02 — Problem Statement</span>
+                <h2>The Core Problem</h2>
+                <p>The oral examination system in Indian colleges is broken at three levels simultaneously. Each villain
+                    hurts a different group. All three are enabled by the same root cause: there is no system.</p>
+
+                <div class="villain-block">
+                    <span class="villain-title">Villain 1 — The Biased Professor</span>
+                    <p><strong>What they do:</strong> Assign marks based on favouritism, personal relationships,
+                        attendance records, perceived attitude, or simple dislike.</p>
+                    <p><strong>Who gets hurt:</strong> The sincere student — the one who studied, understood the
+                        material, but was never given space to properly demonstrate knowledge.</p>
+                    <p><strong>Why devastating:</strong> Unlike written exams, a viva leaves no record. No transcript.
+                        No evidence. The student has no way to prove what they said or challenge what they were marked.
+                    </p>
+                </div>
+
+                <div class="villain-block">
+                    <span class="villain-title">Villain 2 — The Dishonest Student</span>
+                    <p><strong>What they do:</strong> Submit AI-generated or copy-pasted work without understanding.
+                        Prepare scripted answers for likely questions. Walk out with full marks because the examiner
+                        didn't drill deep enough.</p>
+                    <p><strong>Why solvable:</strong> A dishonest student cannot answer a question they didn't prepare
+                        for. TWELVE asks questions they cannot prepare for — because they are generated from the
+                        student's own submission in real time.</p>
+                </div>
+
+                <div class="villain-block">
+                    <span class="villain-title">Villain 3 — The Unstandardized Institution</span>
+                    <p><strong>What they do:</strong> Run oral exams with no consistent rubric, no audit trail, no way
+                        to compare results across sections or years, and no appeals process.</p>
+                    <p><strong>Who gets hurt:</strong> Everyone. Parents who cannot understand marks. Students who
+                        cannot appeal without evidence. Regulators with no visibility.</p>
+                </div>
+
+                <div class="callout">
+                    <p><strong>The root cause:</strong> No one built a system to replace human subjectivity in oral
+                        examination with something better. TWELVE is that system.</p>
+                </div>
+            </div>
+
+            <!-- SOLUTION -->
+            <div class="doc-section" id="solution">
+                <span class="section-label">03 — Solution</span>
+                <h2>The Solution</h2>
+                <p>TWELVE replaces the biased human examiner in the oral viva with a structured, AI-driven interview
+                    system. The system:</p>
+                <ul>
+                    <li>Authenticates the student before the session begins</li>
+                    <li>Reads their actual submitted work before asking a single question</li>
+                    <li>Generates personalised, case-based questions from that work</li>
+                    <li>Drills down on every answer with cross-questions</li>
+                    <li>Detects gaps between claimed understanding and actual understanding</li>
+                    <li>Tests core subject knowledge based on curriculum</li>
+                    <li>Evaluates every response against the college's own rubric</li>
+                    <li>Produces a final score using a panel of AI models</li>
+                    <li>Stores a complete transcript for appeal and audit</li>
+                </ul>
+                <p>No favouritism. No mood. No personal history. No recognition of face or name. Only what the student
+                    knows.</p>
+            </div>
+
+            <!-- BELIEFS -->
+            <div class="doc-section" id="beliefs">
+                <span class="section-label">04 — Philosophy</span>
+                <h2>Core Beliefs</h2>
+
+                <div class="step-list">
+                    <div class="step-item">
+                        <div class="step-number">01</div>
+                        <div class="step-content">
+                            <h5>Bias is not personal. It is structural.</h5>
+                            <p>Individual professors are not all bad people. The system gives them no constraints, no
+                                rubric, no record, and no accountability. The bias is the inevitable output of a broken
+                                structure. Fix the structure. Fix the bias.</p>
+                        </div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-number">02</div>
+                        <div class="step-content">
+                            <h5>A viva should test knowledge, not confidence.</h5>
+                            <p>The student who is nervous and knows everything should not be penalised for their nerves.
+                                The student who is confident and knows nothing should not be rewarded for their
+                                confidence. TWELVE separates the two completely.</p>
+                        </div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-number">03</div>
+                        <div class="step-content">
+                            <h5>Cross-questioning is the only real test.</h5>
+                            <p>Any student can memorise an answer. A student who actually understands a concept can
+                                answer the same concept asked six different ways. TWELVE asks the same concept six
+                                different ways. Memorisation fails. Understanding passes.</p>
+                        </div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-number">04</div>
+                        <div class="step-content">
+                            <h5>The appeal process is not a weakness.</h5>
+                            <p>The AI decides. The professor reviews on appeal. This is not a compromise. This is the
+                                correct structure. The AI is the examiner. The professor is the appellate authority. The
+                                transcript is the evidence.</p>
+                        </div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-number">05</div>
+                        <div class="step-content">
+                            <h5>Transparency is the product.</h5>
+                            <p>Every question TWELVE asked. Every answer the student gave. Every score with reasoning.
+                                All of it stored. All of it accessible. Nothing hidden. Transparency is not a feature.
+                                It is the foundation.</p>
+                        </div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-number">06</div>
+                        <div class="step-content">
+                            <h5>Start narrow. Prove the core. Then scale.</h5>
+                            <p>TWELVE starts with BTech CSE viva examinations. One subject domain where answers are
+                                objective, verifiable, and defensible. Prove it works there first. Then expand.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SESSION FLOW -->
+            <div class="doc-section" id="session-flow">
+                <span class="section-label">05 — Examination</span>
+                <h2>Session Flow</h2>
+                <p>This is what happens when a student sits down for their TWELVE viva. Every step is deliberate. Every
+                    step serves a purpose.</p>
+
+                <div class="step-list">
+                    <div class="step-item">
+                        <div class="step-number">0:00</div>
+                        <div class="step-content">
+                            <h5>Kiosk Activation</h5>
+                            <p>The college computer boots into TWELVE kiosk mode. No other application is accessible —
+                                no browser, no file explorer, no task manager. The student sees only the TWELVE
+                                interface.</p>
+                        </div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-number">0:30</div>
+                        <div class="step-content">
+                            <h5>Student Identification</h5>
+                            <p>Camera activates. TWELVE prompts the student to state their Name and Roll Number. The
+                                student types or speaks their credentials. TWELVE cross-verifies against the college's
+                                student database. At POC stage, identification is by Name and Roll Number only. Camera
+                                is active exclusively for eye-contact monitoring, not identity verification.</p>
+                        </div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-number">1:00</div>
+                        <div class="step-content">
+                            <h5>Submission Retrieval</h5>
+                            <p>Once identity is confirmed, TWELVE silently retrieves the student's submission data:
+                                project submission, Problem Statement assigned, assignment history for the current
+                                semester, and any prior assessment records.</p>
+                        </div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-number">1:30</div>
+                        <div class="step-content">
+                            <h5>Pre-Session Analysis</h5>
+                            <p>TWELVE reads the student's submission and builds a question tree silently while a welcome
+                                screen is shown. The AI identifies key technical terms used, the PS and approach taken,
+                                technologies mentioned, and any claims that can be probed.</p>
+                        </div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-number">3:00</div>
+                        <div class="step-content">
+                            <h5>PS Verification and Project Deep Dive</h5>
+                            <p>TWELVE opens with the student's own Problem Statement, then drills into the submission
+                                using the student's own words against them. Questions cannot be prepared for because
+                                they are built from the student's submission in real time.</p>
+                        </div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-number">6:00</div>
+                        <div class="step-content">
+                            <h5>Cross-Questioning</h5>
+                            <p>The same concept is asked again from a different angle, in a different scenario, with
+                                different framing. A student who memorised an answer will give the same scripted
+                                response to all variants. A student who understood will adapt. TWELVE detects the
+                                difference.</p>
+                        </div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-number">7:30</div>
+                        <div class="step-content">
+                            <h5>Core Subject Knowledge</h5>
+                            <p>After project-specific questioning, TWELVE shifts to curriculum-based knowledge for the
+                                student's current semester. Questions are randomised from the curated question bank.</p>
+                        </div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-number">8:30</div>
+                        <div class="step-content">
+                            <h5>Session Close and Feedback</h5>
+                            <p>TWELVE closes with brief spoken feedback: what areas were strong, what needs development,
+                                one concrete suggestion for improvement. This feedback is developmental only — not part
+                                of the score.</p>
+                        </div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-number">10:00</div>
+                        <div class="step-content">
+                            <h5>Score Generation and Logging</h5>
+                            <p>After the student leaves: final score computed by AI panel, full transcript saved,
+                                session log stored for audit and appeal, next candidate called.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ARCHITECTURE -->
+            <div class="doc-section" id="architecture">
+                <span class="section-label">06 — Technical</span>
+                <h2>System Architecture</h2>
+                <div class="code-block">[College Admin Interface]
+                    |
+                    | uploads student data, curriculum, rubric
+                    v
+                    [TWELVE Data Layer]
+                    — Student records
+                    — Submission files
+                    — Curriculum question bank
+                    — Marking rubric
+                    |
+                    v
+                    [Kiosk Interface — College Computer]
+                    — Full OS lockdown
+                    — Camera feed (eye-contact monitoring)
+                    — Audio input (student voice)
+                    — Display (questions + AI avatar)
+                    |
+                    v
+                    [Session Engine]
+                    — Identity verification module
+                    — Submission retrieval
+                    — Question tree generator
+                    — Real-time response evaluator
+                    — Cross-question logic engine
+                    — Session transcript logger
+                    |
+                    v
+                    [AI Panel — Multi-Model Scoring]
+                    — Model A: Factual correctness (40%)
+                    — Model B: Application depth (40%)
+                    — Model C: Coherence consistency (20%)
+                    — Aggregator: Weighted average
+                    |
+                    v
+                    [Output Layer]
+                    — Final score
+                    — Full session transcript
+                    — Audit log
+                    — Feedback report
+                    — Appeal-ready package</div>
+            </div>
+
+            <!-- AI PANEL -->
+            <div class="doc-section" id="ai-panel">
+                <span class="section-label">07 — AI Design</span>
+                <h2>The AI Panel</h2>
+                <p>TWELVE does not use a single AI model to evaluate answers. It uses a panel of multiple models — each
+                    trained on a different dataset with a different reasoning approach — to evaluate every student
+                    response independently.</p>
+
+                <div class="model-grid">
+                    <div class="model-card">
+                        <span class="model-label">Model A</span>
+                        <span class="model-name">Curriculum Accuracy</span>
+                        <span class="model-weight">40%</span>
+                        <p>Evaluates factual and technical correctness against academic standards. Trained on CSE
+                            textbooks, university syllabi, and exam papers.</p>
+                    </div>
+                    <div class="model-card">
+                        <span class="model-label">Model B</span>
+                        <span class="model-name">Application Depth</span>
+                        <span class="model-weight">40%</span>
+                        <p>Evaluates whether the student can apply the concept. Trained on industry problem-solving
+                            patterns, technical interviews, and case studies.</p>
+                    </div>
+                    <div class="model-card">
+                        <span class="model-label">Model C</span>
+                        <span class="model-name">Coherence Consistency</span>
+                        <span class="model-weight">20%</span>
+                        <p>Evaluates internal consistency across the session. Trained on cross-examination transcripts
+                            and Q&amp;A sessions.</p>
+                    </div>
+                </div>
+
+                <h3>The Aggregator</h3>
+                <p>After all three models score independently, the Aggregator collects scores, applies the college's
+                    pre-defined rubric weightage per section, computes a weighted rational average, and flags any answer
+                    where panel disagreement exceeds a defined threshold for potential human review.</p>
+
+                <div class="callout">
+                    <p><strong>Key principle:</strong> Three models trained on different data are not an echo chamber.
+                        They will produce genuinely different evaluations. The aggregator is not averaging sameness — it
+                        is reconciling difference.</p>
+                </div>
+            </div>
+
+            <!-- QUESTIONING -->
+            <div class="doc-section" id="questioning">
+                <span class="section-label">08 — Methodology</span>
+                <h2>Questioning Strategy</h2>
+
+                <h4>Layer 1 — Submission-Specific Questions</h4>
+                <p>Generated from reading the student's own submitted work. No two students receive the same questions
+                    because no two students submitted the same work. Questions never ask what the student already wrote
+                    — they ask what follows from it.</p>
+
+                <h4>Layer 2 — Drill-Down Questions</h4>
+                <p>For every answer given, TWELVE generates a follow-up that goes one level deeper.</p>
+                <div class="code-block">"You said you used a hash table for O(1) lookup.
+                    What happens to your lookup time when hash collisions occur?"
+
+                    "You said the API returned JSON.
+                    What would you do if the API returned malformed JSON?"
+
+                    "You said you tested this on 100 records.
+                    What would break if it ran on 10 million records?"</div>
+
+                <h4>Layer 3 — Case-Based Variant Questions</h4>
+                <p>Same concept. Different scenario. Different framing. Asked to verify understanding is transferable. A
+                    student who memorised "merge sort is O(n log n)" will give the same answer to all three variants. A
+                    student who understands sorting will give three different answers.</p>
+
+                <h4>Layer 4 — Core Subject Questions</h4>
+                <p>From the curated question bank. Semester and year specific. Randomised per session. Cannot be
+                    predicted or prepared for as a specific set.</p>
+            </div>
+
+            <!-- MARKING -->
+            <div class="doc-section" id="marking">
+                <span class="section-label">09 — Evaluation</span>
+                <h2>Marking and Evaluation Framework</h2>
+
+                <h3>Who Defines the Rubric</h3>
+                <p>The college defines the marking rubric before the examination begins. Professors set the criteria
+                    beforehand: what sections are assessed, what weightage each section carries, what constitutes a
+                    passing answer, and what the total marks are. TWELVE applies the institution's standards with
+                    perfect consistency — something a human examiner cannot guarantee across 60 students over two hours.
+                </p>
+
+                <h3>What Gets Scored</h3>
+                <ul>
+                    <li>Project understanding — PS explanation, approach, and implementation reasoning</li>
+                    <li>Cross-question performance — ability to handle variant questions</li>
+                    <li>Core subject knowledge — curriculum-based questions</li>
+                </ul>
+
+                <h3>What Is Never Scored</h3>
+                <ul>
+                    <li>Eye contact — anti-cheat flag only, never a mark</li>
+                    <li>Vocal confidence — feedback only, never marks</li>
+                    <li>Speed of answering — time taken is logged but not scored</li>
+                    <li>Appearance or presentation</li>
+                </ul>
+            </div>
+
+            <!-- APPEAL -->
+            <div class="doc-section" id="appeal">
+                <span class="section-label">10 — Governance</span>
+                <h2>The Appeal Process</h2>
+
+                <p>The AI decision is the default final mark. On appeal, initiated by the student within a defined
+                    window, the professor reviews:</p>
+                <ol>
+                    <li>The full session transcript — every question TWELVE asked, word for word</li>
+                    <li>Every answer the student gave, transcribed and timestamped</li>
+                    <li>The AI's score for each answer with the reasoning provided</li>
+                    <li>The marking rubric used for evaluation</li>
+                    <li>Any eye-contact flags logged during the session</li>
+                </ol>
+                <p>The professor may override the AI's mark if they find a clear and articulable error. The override
+                    must be documented — the professor must state what was wrong with the AI's scoring for the override
+                    to be recorded.</p>
+
+                <div class="callout">
+                    <p>This is not a compromise. This is the correct structure.</p>
+                    <p>The AI is the examiner. The professor is the appellate authority. The transcript is the evidence.
+                        This mirrors how functional judicial systems work — the trial court decides; appeals go to a
+                        higher authority; the record is the evidence.</p>
+                </div>
+
+                <p>If a student disputes their mark, the professor can point to the exact transcript. There is no "the
+                    professor didn't like me" argument available because the professor did not conduct the examination.
+                    The override itself is also logged and auditable.</p>
+            </div>
+
+            <!-- TECH STACK -->
+            <div class="doc-section" id="tech-stack">
+                <span class="section-label">11 — Infrastructure</span>
+                <h2>Technology Stack</h2>
+
+                <h4>Frontend — Kiosk Interface</h4>
+                <ul>
+                    <li><strong>Kiosk shell:</strong> Electron.js — cross-platform desktop kiosk, OS-level lockdown</li>
+                    <li><strong>UI framework:</strong> React with Tailwind CSS</li>
+                    <li><strong>Speech-to-text:</strong> OpenAI Whisper (local)</li>
+                    <li><strong>Text-to-speech:</strong> ElevenLabs API with pyttsx3 local fallback</li>
+                    <li><strong>Eye-contact analysis:</strong> MediaPipe Face Mesh via OpenCV</li>
+                </ul>
+
+                <h4>Backend — Session Engine</h4>
+                <ul>
+                    <li><strong>API server:</strong> FastAPI (Python) — high performance, async</li>
+                    <li><strong>Session management:</strong> Redis</li>
+                    <li><strong>LLM integration:</strong> Anthropic Claude API (primary), OpenAI GPT-4o (fallback)</li>
+                    <li><strong>Fine-tuned models:</strong> Hugging Face Transformers</li>
+                    <li><strong>Document parsing:</strong> PyMuPDF, python-docx, pypdf</li>
+                </ul>
+
+                <h4>AI Panel Models</h4>
+                <ul>
+                    <li><strong>Model A (Curriculum):</strong> Mistral 7B fine-tuned on academic CSE textbooks</li>
+                    <li><strong>Model B (Application):</strong> LLaMA 3 fine-tuned on technical interview datasets</li>
+                    <li><strong>Model C (Coherence):</strong> Mistral 7B fine-tuned on Q&amp;A transcripts</li>
+                    <li><strong>Question Generator:</strong> Claude API (prompt-engineered)</li>
+                </ul>
+
+                <h4>Database</h4>
+                <ul>
+                    <li><strong>Primary DB:</strong> PostgreSQL with JSONB support</li>
+                    <li><strong>Session cache:</strong> Redis</li>
+                    <li><strong>File storage:</strong> Local filesystem (POC) then AWS S3 at scale</li>
+                </ul>
+
+                <h4>Kiosk OS Lockdown</h4>
+                <ul>
+                    <li><strong>OS:</strong> Windows 10/11 LTSC — most common in Indian college labs</li>
+                    <li><strong>Kiosk mode:</strong> Windows Assigned Access with Electron</li>
+                    <li><strong>USB blocking:</strong> Windows Group Policy</li>
+                    <li><strong>Network:</strong> Local network only during session</li>
+                </ul>
+            </div>
+
+            <!-- ROADMAP -->
+            <div class="doc-section" id="roadmap">
+                <span class="section-label">12 — Roadmap</span>
+                <h2>Roadmap</h2>
+
+                <div class="roadmap-row">
+                    <div class="roadmap-phase">Now — POC<br>2 weeks</div>
+                    <div class="roadmap-detail">
+                        <h5>Prove the Core</h5>
+                        <p>Submission parser. Question generator via Claude API. Student answer interface. Basic
+                            scoring. Transcript output. Local prototype only.</p>
+                    </div>
+                </div>
+                <div class="roadmap-row">
+                    <div class="roadmap-phase">Next — Pilot<br>4–8 weeks</div>
+                    <div class="roadmap-detail">
+                        <h5>First Real Batch</h5>
+                        <p>Kiosk mode. Full session flow. Identity verification. Multi-model panel. Eye-contact
+                            monitoring. Admin portal. Run one real batch at own college in parallel with traditional
+                            viva.</p>
+                    </div>
+                </div>
+                <div class="roadmap-row">
+                    <div class="roadmap-phase">Month 3–4</div>
+                    <div class="roadmap-detail">
+                        <h5>First External Sale</h5>
+                        <p>Comparative pilot data ready. Approach two to three nearby engineering colleges.
+                            Multi-college isolation. Formal admin portal. Begin question bank expansion.</p>
+                    </div>
+                </div>
+                <div class="roadmap-row">
+                    <div class="roadmap-phase">Month 6+</div>
+                    <div class="roadmap-detail">
+                        <h5>Scale</h5>
+                        <p>LMS integration. Multi-department expansion. Self-service onboarding. Biometric verification
+                            post legal clearance. 20+ college target.</p>
+                    </div>
+                </div>
+
+                <div class="callout" style="margin-top: 3rem;">
+                    <p><strong>The final test for every feature:</strong></p>
+                    <p>Does this make the viva fairer — or does it just make it faster? If it just makes it faster,
+                        rebuild it until it makes it fairer. A faster unfair examination is not a product. It is a more
+                        efficient injustice.</p>
+                </div>
+
+                <h3>The One Thing That Cannot Be Compromised</h3>
+                <p>The transcript is sacred. Every question TWELVE asked. Every answer the student gave. Every score
+                    with its reasoning. Stored. Immutable. Accessible.</p>
+                <p>If TWELVE ever deletes a transcript, edits a transcript, or hides a transcript — it has become the
+                    same biased examiner it was built to replace. The transcript is the difference between TWELVE and
+                    everything that came before it.</p>
+            </div>
+
+        </main>
+    </div>
+
+    <footer>
+        <span class="footer-left">TWELVE</span>
+        <span class="footer-right">No Fear. No Favour. Only Knowledge.</span>
+    </footer>
+
+    <script>
+        // Highlight active sidebar link on scroll
+        const sections = document.querySelectorAll('.doc-section');
+        const links = document.querySelectorAll('.sidebar-nav a');
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    links.forEach(link => {
+                        link.style.color = '';
+                        link.style.borderLeftColor = '';
+                    });
+                    const id = entry.target.id;
+                    const activeLink = document.querySelector(`.sidebar-nav a[href="#${id}"]`);
+                    if (activeLink) {
+                        activeLink.style.color = 'var(--text-primary)';
+                        activeLink.style.borderLeftColor = 'var(--text-primary)';
+                    }
+                }
+            });
+        }, { rootMargin: '-20% 0px -60% 0px' });
+
+        sections.forEach(s => observer.observe(s));
+    </script>
+
+</body>
+
+</html>
